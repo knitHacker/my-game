@@ -14,11 +14,12 @@ import Control.Monad.IO.Class
 
 data GameState = GameState
     { gameStateUserState :: (Int, Int)
+    , gameStateUserMovement :: Maybe Direction
     } deriving (Show, Eq)
 
 
 initGameState :: IO GameState
-initGameState = return $ GameState (0,0)
+initGameState = return $ GameState (0,0) Nothing
 
 
 class Monad m => GameStateRead m where
@@ -31,12 +32,14 @@ updateGameState = do
     gs <- readGameState
     inputs <- readInputState
     case inputStateDirection inputs of
-        Nothing -> return gs
+        Nothing -> return $ gs { gameStateUserMovement = Nothing }
         Just dir -> return $ updatePlayer cfgs gs dir
 
 
 updatePlayer :: Configs -> GameState -> Direction -> GameState
-updatePlayer cfgs gs dir = gs { gameStateUserState = (x'', y'') }
+updatePlayer cfgs gs dir
+    | gameStateUserMovement gs == Just dir = gs
+    | otherwise = gs { gameStateUserState = (x'', y''), gameStateUserMovement = Just dir }
     where
         (xMove, yMove) = updatePosition dir
         (xMax, yMax) = configsBoardSize cfgs
