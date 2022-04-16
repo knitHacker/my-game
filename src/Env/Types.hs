@@ -8,7 +8,7 @@ module Env.Types
     ) where
 
 import Configs
-import OutputHandles
+import OutputHandles.Types
 import InputState
 import GameState
 

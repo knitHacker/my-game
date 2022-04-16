@@ -31,8 +31,11 @@ library
       Env.Types
       Game
       GameState
+      GameState.Draw
       InputState
       OutputHandles
+      OutputHandles.Draw
+      OutputHandles.Types
       Utils
   other-modules:
       Paths_my_game

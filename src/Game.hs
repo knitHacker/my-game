@@ -2,11 +2,13 @@ module Game
     ( runGame
     ) where
 
+import OutputHandles.Types
 import OutputHandles
 import Env
 import Env.Types
 import InputState
 import GameState
+import GameState.Draw
 
 import qualified SDL
 import Control.Monad.IO.Class
@@ -32,5 +34,6 @@ runGame appEnvData = do
 stepGame :: AppEnv InputState
 stepGame = do
     appEnvData <- ask
-    updateWindow
+    draws <- updateWindow
+    executeDraw draws
     updateInput

@@ -10,7 +10,7 @@ module Env
 
 import Env.Types
 import Configs
-import OutputHandles
+import OutputHandles.Types
 import InputState
 import GameState
 
