@@ -9,18 +9,38 @@ import Control.Monad
 import Configs
 import InputState
 
+import Utils
+
 
 import Control.Monad.IO.Class
 
 data GameState = GameState
     { gameStateUserState :: (Int, Int)
     , gameStateUserMovement :: Maybe Direction
+    , gameStateItemPositions :: [(Int, Int)]
     } deriving (Show, Eq)
 
 
-initGameState :: IO GameState
-initGameState = return $ GameState (0,0) Nothing
+initGameState :: Configs -> IO GameState
+initGameState cfgs = do
+    numberOfItems <- randomValue minItems maxItems
+    itemPos <- replicateM numberOfItems $ randomPosition cfgs
+    return $ GameState (0,0) Nothing itemPos
+    where
+        (boardWidth, boardHeight) = configsBoardSize cfgs
+        boardSize = boardWidth * boardHeight
+        minItems = div boardSize 20
+        maxItems = div boardSize 10
 
+
+
+randomPosition :: (MonadIO m) => Configs -> m (Int, Int)
+randomPosition cfgs = do
+    xPos <- randomValue 0 (boardWidth - 1)
+    yPos <- randomValue 0 (boardHeight - 1)
+    return (xPos, yPos)
+    where
+        (boardWidth, boardHeight) = configsBoardSize cfgs
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState

@@ -19,7 +19,7 @@ import Configs
 import GameState
 
 
-data Colour = White | Red | Blue | Green | Yellow
+data Colour = White | Black | Red | Blue | Green | Yellow
 
 type Draw m = (Colour, [m ()])
 
@@ -28,8 +28,6 @@ data OutputHandles = OutputHandles
     , renderer :: SDL.Renderer
     }
 
-screenWidth, screenHeight :: CInt
-(screenWidth, screenHeight) = (640, 480)
 
 rendererConfig :: SDL.RendererConfig
 rendererConfig = SDL.RendererConfig
@@ -38,23 +36,28 @@ rendererConfig = SDL.RendererConfig
   }
 
 initOutputHandles :: Configs -> IO OutputHandles
-initOutputHandles cfg = do
+initOutputHandles cfgs = do
     SDL.initialize []
     window <- SDL.createWindow "My Game" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
     SDL.showWindow window
     r <- SDL.createRenderer window (-1) rendererConfig
-    let draws = drawBoard cfg r
+    let draws = drawBoard cfgs r
     drawAll r draws
     return $ OutputHandles window r
+    where
+        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
+        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
 
 drawBoard :: (MonadIO m) => Configs -> SDL.Renderer -> [Draw m]
-drawBoard cfg r =
-    [ (Blue, fmap (\xPos -> drawLine r (xPos, 0) (xPos, screenHeight)) widthPositions)
-    , (Green, fmap (\yPos -> drawLine r (0, yPos) (screenWidth, yPos)) heightPositions)
+drawBoard cfgs r =
+    [ (Black, fmap (\xPos -> drawLine r (xPos, 0) (xPos, screenHeight)) widthPositions)
+    , (Black, fmap (\yPos -> drawLine r (0, yPos) (screenWidth, yPos)) heightPositions)
     ]
     where
-        boardWidth = fst $ configsBoardSize cfg
-        boardHeight = snd $ configsBoardSize cfg
+        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
+        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
+        boardWidth = fst $ configsBoardSize cfgs
+        boardHeight = snd $ configsBoardSize cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
         getLinePositions 0 _ _ = []
@@ -66,6 +69,8 @@ drawBoard cfg r =
 drawPlayer :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
 drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
     where
+        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
+        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
         (boardWidth, boardHeight) = configsBoardSize cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
@@ -76,6 +81,19 @@ drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
         height = div intervalH 2
         rect = mkRect xPos yPos width height
 
+drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
+drawItems cfgs gs r = (Red, drawItem <$> gameStateItemPositions gs)
+    where
+        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
+        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
+        (boardWidth, boardHeight) = configsBoardSize cfgs
+        intervalW = div screenWidth (fromIntegral boardWidth)
+        intervalH = div screenHeight (fromIntegral boardHeight)
+        getXPos xPos = (fromIntegral xPos) * intervalW + div intervalW 4
+        getYPos yPos = (fromIntegral yPos) * intervalH + div intervalH 4
+        width = div intervalW 2
+        height = div intervalH 2
+        drawItem (xPos, yPos) = fillRectangle r $ mkRect (getXPos xPos) (getYPos yPos) width height
 
 mkRect :: a -> a -> a -> a-> SDL.Rectangle a
 mkRect x y w h = SDL.Rectangle o z
@@ -92,6 +110,7 @@ mkPoint x y = SDL.P (SDL.V2 x y)
 
 setColor :: (MonadIO m) => SDL.Renderer -> Colour -> m ()
 setColor r White  = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
+setColor r Black  = SDL.rendererDrawColor r $= SDL.V4 0 0 0 0
 setColor r Red    = SDL.rendererDrawColor r $= SDL.V4 maxBound 0 0 maxBound
 setColor r Green  = SDL.rendererDrawColor r $= SDL.V4 0 maxBound 0 maxBound
 setColor r Blue   = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
@@ -121,8 +140,9 @@ updateWindow = do
     gs <- readGameState
     let
         player = drawPlayer cfgs gs (renderer outputs)
+        itemDraw = drawItems cfgs gs (renderer outputs)
         boardDraws = drawBoard cfgs (renderer outputs)
-    drawAll (renderer outputs) (player : boardDraws)
+    drawAll (renderer outputs) (itemDraw : player : boardDraws)
 
 
 drawAll :: (MonadIO m) => SDL.Renderer -> [Draw m] -> m ()
