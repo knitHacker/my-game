@@ -10,7 +10,7 @@ module Env.Types
 import Configs
 import OutputHandles.Types
 import InputState
-import GameState
+import GameState.Types
 
 import Control.Monad.Reader          (MonadReader, ReaderT, asks)
 import Control.Monad

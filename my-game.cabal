@@ -26,12 +26,12 @@ source-repository head
 library
   exposed-modules:
       Configs
-      Debug
       Env
       Env.Types
       Game
       GameState
       GameState.Draw
+      GameState.Types
       InputState
       OutputHandles
       OutputHandles.Draw

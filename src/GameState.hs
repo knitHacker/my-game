@@ -1,25 +1,17 @@
 module GameState
-    ( GameState(..)
-    , initGameState
-    , GameStateRead(..)
+    ( initGameState
     , updateGameState
     ) where
 
 import Control.Monad
 import Configs
 import InputState
+import GameState.Types
 
 import Utils
 
 
 import Control.Monad.IO.Class
-
-data GameState = GameState
-    { gameStateUserState :: (Int, Int)
-    , gameStateUserMovement :: Maybe Direction
-    , gameStateItemPositions :: [(Int, Int)]
-    } deriving (Show, Eq)
-
 
 initGameState :: Configs -> IO GameState
 initGameState cfgs = do
@@ -38,12 +30,11 @@ randomPosition :: (MonadIO m) => Configs -> m (Int, Int)
 randomPosition cfgs = do
     xPos <- randomValue 0 (boardWidth - 1)
     yPos <- randomValue 0 (boardHeight - 1)
-    return (xPos, yPos)
+    if (xPos, yPos) == (0, 0)
+        then randomPosition cfgs
+        else return (xPos, yPos)
     where
         (boardWidth, boardHeight) = configsBoardSize cfgs
-
-class Monad m => GameStateRead m where
-    readGameState :: m GameState
 
 
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState

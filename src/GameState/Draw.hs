@@ -14,6 +14,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Configs
 import GameState
+import GameState.Types
 import OutputHandles.Types
 import OutputHandles.Draw
 
