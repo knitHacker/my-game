@@ -31,7 +31,7 @@ initItems cfgs = do
 initGameState :: Configs -> IO GameState
 initGameState cfgs = do
     items <- initItems cfgs
-    return $ GameState initPlayer items
+    return $ GameState initPlayer items Garden
 
 
 
@@ -64,7 +64,7 @@ collisionCheck gs =
         Just item ->
             let items' = M.delete playerPos items
                 player' = player { playerItems = (M.insertWith update item 1 (playerItems player)) }
-            in GameState player' (ItemManager items')
+            in gs { gameStatePlayer = player', gameStateItemManager = (ItemManager items') }
     where
         items = gameItems $ gameStateItemManager gs
         player = gameStatePlayer gs

@@ -1,6 +1,7 @@
 module GameState.Types
     ( GameState(..)
     , GameStateRead(..)
+    , GameMode(..)
     , Player(..)
     , ItemManager(..)
     , Item(..)
@@ -20,7 +21,11 @@ import qualified Data.Map.Strict as M
 data GameState = GameState
     { gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
+    , gameStateMode :: GameMode
     }
+
+
+data GameMode = Garden | Store | Menu deriving (Show, Eq)
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState
