@@ -43,6 +43,7 @@ library
       src
   build-depends:
       base >=4.7 && <5
+    , containers >=0.6.4.1
     , mtl >=2.2.2
     , random >=1.2.1
     , sdl2 >=2.0.6
@@ -58,6 +59,7 @@ executable my-game-exe
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers >=0.6.4.1
     , mtl >=2.2.2
     , my-game
     , random >=1.2.1
@@ -75,6 +77,7 @@ test-suite my-game-test
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
+    , containers >=0.6.4.1
     , mtl >=2.2.2
     , my-game
     , random >=1.2.1

@@ -25,6 +25,7 @@ dependencies:
 - sdl2 >= 2.0.6
 - mtl >= 2.2.2
 - random >= 1.2.1
+- containers >= 0.6.4.1
 
 library:
   source-dirs: src

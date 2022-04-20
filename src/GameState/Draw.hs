@@ -11,6 +11,7 @@ import SDL.Vect
 import SDL                    (($=))
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Data.Map.Strict as M
 
 import Configs
 import GameState
@@ -45,7 +46,7 @@ drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
         (boardWidth, boardHeight) = configsBoardSize cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
-        (xBoard, yBoard) = gameStateUserState gs
+        (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
         xPos = (fromIntegral xBoard) * intervalW + div intervalW 4
         yPos = (fromIntegral yBoard) * intervalH + div intervalH 4
         width = div intervalW 2
@@ -53,7 +54,7 @@ drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
         rect = mkRect xPos yPos width height
 
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
-drawItems cfgs gs r = (Red, drawItem <$> gameStateItemPositions gs)
+drawItems cfgs gs r = (Red, drawItem <$> M.keys (gameItems (gameStateItemManager gs)))
     where
         screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
         screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
