@@ -22,7 +22,8 @@ initItems cfgs = do
     itemPos <- replicateM numberOfItems $ randomPosition cfgs
     return $ ItemManager $ M.fromList $ zip itemPos $ repeat $ Item Blob
     where
-        (boardWidth, boardHeight) = configsBoardSize cfgs
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
         boardSize = boardWidth * boardHeight
         minItems = div boardSize 20
         maxItems = div boardSize 10
@@ -43,7 +44,8 @@ randomPosition cfgs = do
         then randomPosition cfgs
         else return (xPos, yPos)
     where
-        (boardWidth, boardHeight) = configsBoardSize cfgs
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
 
 
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
@@ -78,7 +80,8 @@ updatePlayer cfgs player dir
     | otherwise = player { playerPosition = (x'', y''), playerMovement = Just dir }
     where
         (xMove, yMove) = updatePosition dir
-        (xMax, yMax) = configsBoardSize cfgs
+        xMax = boardSizeX cfgs
+        yMax = boardSizeY cfgs
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove

@@ -9,6 +9,10 @@ copyright:           "2022 Author name here"
 extra-source-files:
 - README.md
 - ChangeLog.md
+- data/configs/*.json
+
+data-files:
+- data/configs/game.json
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -26,6 +30,8 @@ dependencies:
 - mtl >= 2.2.2
 - random >= 1.2.1
 - containers >= 0.6.4.1
+- aeson >= 2.0.3.0
+- directory >= 1.3.6.0
 
 library:
   source-dirs: src

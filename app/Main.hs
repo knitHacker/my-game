@@ -12,9 +12,6 @@ import SDL.Vect
 import qualified SDL
 
 
-screenWidth, screenHeight :: CInt
-(screenWidth, screenHeight) = (640, 480)
-
 main :: IO ()
 main = do
     configs <- initConfigs

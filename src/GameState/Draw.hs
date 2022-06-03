@@ -26,10 +26,10 @@ drawBoard cfgs r =
     , (Black, fmap (\yPos -> drawLine r (0, yPos) (screenWidth, yPos)) heightPositions)
     ]
     where
-        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
-        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
-        boardWidth = fst $ configsBoardSize cfgs
-        boardHeight = snd $ configsBoardSize cfgs
+        screenWidth = fromIntegral $ windowSizeX cfgs
+        screenHeight = fromIntegral $ windowSizeY cfgs
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
         getLinePositions 0 _ _ = []
@@ -41,9 +41,10 @@ drawBoard cfgs r =
 drawPlayer :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
 drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
     where
-        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
-        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
-        (boardWidth, boardHeight) = configsBoardSize cfgs
+        screenWidth = fromIntegral $ windowSizeX cfgs
+        screenHeight = fromIntegral $ windowSizeY cfgs
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
@@ -56,9 +57,10 @@ drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
 drawItems cfgs gs r = (Red, drawItem <$> M.keys (gameItems (gameStateItemManager gs)))
     where
-        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
-        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
-        (boardWidth, boardHeight) = configsBoardSize cfgs
+        screenWidth = fromIntegral $ windowSizeX cfgs
+        screenHeight = fromIntegral $ windowSizeY cfgs
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
         intervalW = div screenWidth (fromIntegral boardWidth)
         intervalH = div screenHeight (fromIntegral boardHeight)
         getXPos xPos = (fromIntegral xPos) * intervalW + div intervalW 4

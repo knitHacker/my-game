@@ -1,0 +1,7 @@
+{
+  "debug": true,
+  "windowSizeX": 1000,
+  "windowSizeY": 800,
+  "boardSizeX": 30,
+  "boardSizeY": 30
+}

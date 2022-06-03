@@ -36,8 +36,8 @@ initOutputHandles cfgs = do
     drawAll r draws
     return $ OutputHandles window r
     where
-        screenWidth = fromIntegral $ fst $ configsScreenSize cfgs
-        screenHeight = fromIntegral $ snd $ configsScreenSize cfgs
+        screenWidth = fromIntegral $ windowSizeX cfgs
+        screenHeight = fromIntegral $ windowSizeY cfgs
 
 
 cleanupOutputHandles :: OutputHandles -> IO ()
