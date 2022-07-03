@@ -35,7 +35,6 @@ library
       GameState
       GameState.Draw
       GameState.Types
-      Graphics.Types
       InputState
       OutputHandles
       OutputHandles.Draw
