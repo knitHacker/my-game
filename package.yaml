@@ -10,9 +10,11 @@ extra-source-files:
 - README.md
 - ChangeLog.md
 - data/configs/*.json
+- assets/*.png
 
 data-files:
 - data/configs/game.json
+- assets/outside.png
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
@@ -27,6 +29,8 @@ dependencies:
 - base >= 4.7 && < 5
 - transformers >= 0.5.6.2
 - sdl2 >= 2.0.6
+- sdl2-image >= 2.1.0.0
+- text
 - mtl >= 2.2.2
 - random >= 1.2.1
 - containers >= 0.6.4.1

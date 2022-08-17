@@ -1,7 +1,14 @@
 {
-  "debug": true,
-  "windowSizeX": 1000,
-  "windowSizeY": 800,
-  "boardSizeX": 30,
-  "boardSizeY": 30
+    "debug": true,
+    "windowSizeX": 1000,
+    "windowSizeY": 800,
+    "boardSizeX": 100,
+    "boardSizeY": 100,
+    "areas": {
+        "outside": {
+            "sizeX": 400,
+            "sizeY": 300,
+            "file": "assets/outside.png"
+        }
+    }
 }

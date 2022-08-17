@@ -6,6 +6,7 @@ module OutputHandles.Draw
     , setColor
     , drawLine
     , drawAll
+    , initWindow
     ) where
 
 
@@ -47,7 +48,17 @@ setColor r Blue   = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
 setColor r Yellow = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
 
 
-drawAll :: (MonadIO m) => SDL.Renderer -> [Draw m] -> m ()
+drawTexture :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> Maybe (SDL.Rectangle CInt) -> Maybe (SDL.Rectangle CInt) -> m ()
+drawTexture = SDL.copy
+
+initWindow :: (MonadIO m) => SDL.Renderer -> m ()
+initWindow r = do
+    setColor r Black
+    SDL.clear r
+    SDL.present r
+
+
+drawAll :: (MonadIO m, ConfigsRead m) => SDL.Renderer -> [Draw m] -> m ()
 drawAll r drawings = do
     setColor r White
     SDL.clear r
@@ -55,6 +66,7 @@ drawAll r drawings = do
     SDL.present r
 
 draw :: (MonadIO m) => SDL.Renderer -> Draw m -> m ()
-draw r (color, action) = do
+draw r (Graphic color action) = do
     setColor r color
     mapM_ id action
+draw r (Texture t mask pos) = drawTexture r t mask pos

@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module GameState
     ( initGameState
     , updateGameState
@@ -8,9 +9,14 @@ import Configs
 import InputState
 import GameState.Types
 
+import qualified Data.Text as T
+import SDL
+
 import Utils
 
+import qualified SDL.Image
 import qualified Data.Map.Strict as M
+import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 
 initPlayer :: Player
@@ -32,9 +38,10 @@ initItems cfgs = do
 initGameState :: Configs -> IO GameState
 initGameState cfgs = do
     items <- initItems cfgs
-    return $ GameState initPlayer items Garden
-
-
+    return $ GameState background initPlayer items World
+    where
+        area = ((areas cfgs) ! "outside")
+        background = Background area 0 0
 
 randomPosition :: (MonadIO m) => Configs -> m (Int, Int)
 randomPosition cfgs = do
@@ -55,9 +62,25 @@ updateGameState = do
     inputs <- readInputState
     player' <- case inputStateDirection inputs of
         Nothing -> return $ (gameStatePlayer gs) { playerMovement = Nothing }
-        Just dir -> return $ updatePlayer cfgs (gameStatePlayer gs) dir
-    return $ collisionCheck (gs { gameStatePlayer = player' })
+        Just dir -> return $ updatePlayer (background gs) (gameStatePlayer gs) dir
+    let background' = updateBackground cfgs (background gs) player'
+    return $ collisionCheck (gs { background = background', gameStatePlayer = player' })
 
+
+updateBackground :: Configs -> Background -> Player -> Background
+updateBackground cfgs back player = back { xOffset = getOffset playerX windowX xMax
+                                         , yOffset = getOffset playerY windowY yMax
+                                         }
+    where
+        windowX = boardSizeX cfgs
+        windowY = boardSizeY cfgs
+        xMax = sizeX $ area back
+        yMax = sizeY $ area back
+        (playerX, playerY) = playerPosition $ player
+        getOffset player window areaMax
+            | player < (div window 2) = 0
+            | player > areaMax - (div window 2) = areaMax - window
+            | otherwise = player - (div window 2)
 
 collisionCheck :: GameState -> GameState
 collisionCheck gs =
@@ -74,14 +97,14 @@ collisionCheck gs =
         update old new = old + new
 
 
-updatePlayer :: Configs -> Player -> Direction -> Player
-updatePlayer cfgs player dir
+updatePlayer :: Background -> Player -> Direction -> Player
+updatePlayer back player dir
     | playerMovement player == Just dir = player
     | otherwise = player { playerPosition = (x'', y''), playerMovement = Just dir }
     where
         (xMove, yMove) = updatePosition dir
-        xMax = boardSizeX cfgs
-        yMax = boardSizeY cfgs
+        xMax = sizeX $ area back
+        yMax = sizeY $ area back
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove
@@ -89,7 +112,7 @@ updatePlayer cfgs player dir
         y'' = if y' < yMax && y' >= 0 then y' else y
 
 updatePosition :: Direction -> (Int, Int)
-updatePosition DUp = (0, -1)
-updatePosition DDown = (0, 1)
-updatePosition DLeft = (-1, 0)
-updatePosition DRight = (1, 0)
+updatePosition DUp = (0, -5)
+updatePosition DDown = (0, 5)
+updatePosition DLeft = (-5, 0)
+updatePosition DRight = (5, 0)

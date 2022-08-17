@@ -4,6 +4,7 @@ module Configs
     ( Configs(..)
     , initConfigs
     , ConfigsRead(..)
+    , AreaCfg(..)
     ) where
 
 import Control.Monad
@@ -13,9 +14,20 @@ import GHC.Generics
 import Data.Aeson
 import Data.Either
 import System.Directory
+import qualified Data.Map.Strict as M
+import qualified Data.Text as T
 
 configFile :: FilePath
 configFile = "data/configs/game.json"
+
+data AreaCfg = Area
+    { sizeX :: Int
+    , sizeY :: Int
+    , file :: FilePath
+    } deriving (Generic, Show, Eq, Ord)
+
+instance ToJSON AreaCfg
+instance FromJSON AreaCfg
 
 data Configs = Configs
     { debug :: Bool
@@ -23,6 +35,7 @@ data Configs = Configs
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
+    , areas :: M.Map T.Text AreaCfg
     } deriving (Generic, Show, Eq)
 
 
@@ -40,7 +53,7 @@ initConfigs = do
         return $ fromRight defaultConfigs configsM
     else return defaultConfigs
     where
-        defaultConfigs = Configs True 20 20 1000 800
+        defaultConfigs = Configs True 20 20 1000 800 mempty
 
 
 class Monad m => ConfigsRead m where

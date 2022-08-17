@@ -6,26 +6,29 @@ module GameState.Types
     , ItemManager(..)
     , Item(..)
     , ItemType(..)
+    , Background(..)
     ) where
 
 import Control.Monad
+import Control.Monad.IO.Class
+import qualified Data.Map.Strict as M
+
 import Configs
 import InputState
 
 import Utils
 
 
-import Control.Monad.IO.Class
-import qualified Data.Map.Strict as M
 
 data GameState = GameState
-    { gameStatePlayer :: Player
+    { background :: Background
+    , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
     , gameStateMode :: GameMode
     }
 
 
-data GameMode = Garden | Store | Menu deriving (Show, Eq)
+data GameMode = Menu | Inventory | World deriving (Show, Eq)
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState
@@ -48,4 +51,10 @@ data ItemType = Blob deriving (Show, Eq, Ord)
 
 data Item = Item
     { itemType :: ItemType
+    } deriving (Show, Eq, Ord)
+
+data Background = Background
+    { area :: AreaCfg
+    , xOffset :: Int
+    , yOffset :: Int
     } deriving (Show, Eq, Ord)

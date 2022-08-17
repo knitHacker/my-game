@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module GameState.Draw
     ( updateWindow
-    , drawBoard
     ) where
 
 
@@ -12,6 +11,7 @@ import SDL                    (($=))
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
+import Data.Map.Strict ((!))
 
 import Configs
 import GameState
@@ -19,43 +19,43 @@ import GameState.Types
 import OutputHandles.Types
 import OutputHandles.Draw
 
+xBlocksShow = 10
+yBlocksShow = 10
 
-drawBoard :: (MonadIO m) => Configs -> SDL.Renderer -> [Draw m]
-drawBoard cfgs r =
-    [ (Black, fmap (\xPos -> drawLine r (xPos, 0) (xPos, screenHeight)) widthPositions)
-    , (Black, fmap (\yPos -> drawLine r (0, yPos) (screenWidth, yPos)) heightPositions)
-    ]
+
+drawBackground :: (MonadIO m) => Configs -> GameState -> OutputHandles -> [Draw m]
+drawBackground cfgs gs outs = [Texture ((textures outs) ! "outside") (Just mask) Nothing]
     where
-        screenWidth = fromIntegral $ windowSizeX cfgs
-        screenHeight = fromIntegral $ windowSizeY cfgs
+        mask = mkRect xStart yStart xEnd yEnd
+        xOff = xOffset $ background gs
+        yOff = yOffset $ background gs
+        xStart = fromIntegral xOff
+        yStart = fromIntegral yOff
+        xEnd = fromIntegral boardWidth
+        yEnd = fromIntegral boardHeight
+
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
-        intervalW = div screenWidth (fromIntegral boardWidth)
-        intervalH = div screenHeight (fromIntegral boardHeight)
-        getLinePositions 0 _ _ = []
-        getLinePositions n start interval = start : getLinePositions (n-1) (start+interval) interval
-        widthPositions = getLinePositions boardWidth 0 intervalW
-        heightPositions = getLinePositions boardHeight 0 intervalH
 
 
-drawPlayer :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
-drawPlayer cfgs gs r = (Green, [fillRectangle r rect])
+drawPlayer :: (MonadIO m) => OutputHandles -> GameState -> SDL.Renderer -> Draw m
+drawPlayer outs gs r = Graphic Green [fillRectangle r rect]
     where
-        screenWidth = fromIntegral $ windowSizeX cfgs
-        screenHeight = fromIntegral $ windowSizeY cfgs
-        boardWidth = boardSizeX cfgs
-        boardHeight = boardSizeY cfgs
-        intervalW = div screenWidth (fromIntegral boardWidth)
-        intervalH = div screenHeight (fromIntegral boardHeight)
+        sizeX = 10
+        sizeY = 10
+        xOff = xOffset $ background gs
+        yOff = yOffset $ background gs
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
-        xPos = (fromIntegral xBoard) * intervalW + div intervalW 4
-        yPos = (fromIntegral yBoard) * intervalH + div intervalH 4
-        width = div intervalW 2
-        height = div intervalH 2
+        xRat = ratioX outs
+        yRat = ratioY outs
+        xPos = floor ((fromIntegral (xBoard - xOff)) * xRat - sizeX / 2)
+        yPos = floor ((fromIntegral (yBoard - yOff)) * yRat - sizeY / 2)
+        width = floor (xRat * sizeX)
+        height = floor (yRat * sizeY)
         rect = mkRect xPos yPos width height
 
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
-drawItems cfgs gs r = (Red, drawItem <$> M.keys (gameItems (gameStateItemManager gs)))
+drawItems cfgs gs r = Graphic Red (drawItem <$> M.keys (gameItems (gameStateItemManager gs)))
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
         screenHeight = fromIntegral $ windowSizeY cfgs
@@ -76,7 +76,7 @@ updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
     let
-        player = drawPlayer cfgs gs (renderer outputs)
-        itemDraw = drawItems cfgs gs (renderer outputs)
-        boardDraws = drawBoard cfgs (renderer outputs)
-    return (itemDraw : player : boardDraws)
+        boardDraws = drawBackground cfgs gs outputs
+        player = drawPlayer outputs gs (renderer outputs)
+        -- itemDraw = drawItems cfgs gs (renderer outputs)
+    return (boardDraws ++ [] ++ [player])
