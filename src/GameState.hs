@@ -103,8 +103,8 @@ updatePlayer back player dir
     | otherwise = player { playerPosition = (x'', y''), playerMovement = Just dir }
     where
         (xMove, yMove) = updatePosition dir
-        xMax = sizeX $ area back
-        yMax = sizeY $ area back
+        xMax = (sizeX $ area back) - 5
+        yMax = (sizeY $ area back) - 5
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove
