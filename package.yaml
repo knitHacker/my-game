@@ -15,6 +15,7 @@ extra-source-files:
 data-files:
 - data/configs/game.json
 - assets/outside.png
+- assets/main_character.png
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

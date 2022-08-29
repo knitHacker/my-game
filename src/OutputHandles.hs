@@ -25,6 +25,7 @@ import GameState.Draw
 import OutputHandles.Types
 import OutputHandles.Draw
 
+type TextureMap = M.Map T.Text SDL.Texture
 
 rendererConfig :: SDL.RendererConfig
 rendererConfig = SDL.RendererConfig
@@ -40,7 +41,9 @@ initOutputHandles cfgs = do
     r <- SDL.createRenderer window (-1) rendererConfig
     -- clears the screen
     initWindow r
-    textures <- loadTextures cfgs r
+    textures <- loadAreaTextures cfgs r
+    textures' <- loadCharTexture textures cfgs r
+    print $ fst <$> M.toList textures'
     return $ OutputHandles window r textures ratioX ratioY
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
@@ -50,23 +53,32 @@ initOutputHandles cfgs = do
         ratioX = fromIntegral screenWidth / fromIntegral boardX
         ratioY = fromIntegral screenHeight / fromIntegral boardY
 
-loadTexture :: SDL.Renderer -> (T.Text, AreaCfg) -> IO (Maybe (T.Text, SDL.Texture))
-loadTexture r (name, area) = do
-    path <- getDataFileName (file area)
+loadTexture :: SDL.Renderer -> (T.Text, FilePath) -> IO (Maybe (T.Text, SDL.Texture))
+loadTexture r (name, textureFile) = do
+    path <- getDataFileName textureFile
     fileExists <- doesFileExist path
     if fileExists
     then do
         t <- SDL.Image.loadTexture r path
         return $ Just (name, t)
     else do
-        putStrLn $ "Faied to load iamge: " ++ (file area)
+        putStrLn $ "Faied to load iamge: " ++ textureFile
         return Nothing
 
-loadTextures :: Configs -> SDL.Renderer -> IO (M.Map T.Text SDL.Texture)
-loadTextures cfgs r = do
-    textures <- mapM (loadTexture r) areasCfg
+loadCharTexture :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
+loadCharTexture tm cfgs r =
+    case characterFile $ character cfgs of
+        Nothing -> return tm
+        Just fileName -> do
+            textureM <- loadTexture r ("character", fileName)
+            case textureM of
+                Nothing -> return tm
+                Just (name, tex) -> return $ M.insert name tex tm
+
+loadAreaTextures :: Configs -> SDL.Renderer -> IO (M.Map T.Text SDL.Texture)
+loadAreaTextures cfgs r = do
+    textures <- mapM (loadTexture r) ((fmap areaFile) <$> areasCfg)
     let textures' = catMaybes textures
-    print $ fst <$> textures'
     return $ M.fromList textures'
     where
         areasCfg = M.toList $ areas cfgs

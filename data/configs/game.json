@@ -4,11 +4,14 @@
     "windowSizeY": 800,
     "boardSizeX": 100,
     "boardSizeY": 100,
+    "character": {
+        "characterFile": "assets/main_character.png"
+    },
     "areas": {
         "outside": {
             "sizeX": 400,
             "sizeY": 300,
-            "file": "assets/outside.png"
+            "areaFile": "assets/outside.png"
         }
     }
 }

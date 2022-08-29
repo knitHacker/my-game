@@ -24,6 +24,7 @@ extra-source-files:
 data-files:
     data/configs/game.json
     assets/outside.png
+    assets/main_character.png
 
 source-repository head
   type: git

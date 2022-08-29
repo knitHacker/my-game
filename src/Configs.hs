@@ -5,6 +5,7 @@ module Configs
     , initConfigs
     , ConfigsRead(..)
     , AreaCfg(..)
+    , CharacterCfg(..)
     ) where
 
 import Control.Monad
@@ -20,10 +21,17 @@ import qualified Data.Text as T
 configFile :: FilePath
 configFile = "data/configs/game.json"
 
+data CharacterCfg = CharacterCfg
+    { characterFile :: Maybe FilePath
+    } deriving (Generic, Show, Eq, Ord)
+
+instance ToJSON CharacterCfg
+instance FromJSON CharacterCfg
+
 data AreaCfg = Area
     { sizeX :: Int
     , sizeY :: Int
-    , file :: FilePath
+    , areaFile :: FilePath
     } deriving (Generic, Show, Eq, Ord)
 
 instance ToJSON AreaCfg
@@ -35,6 +43,7 @@ data Configs = Configs
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
+    , character :: CharacterCfg
     , areas :: M.Map T.Text AreaCfg
     } deriving (Generic, Show, Eq)
 
@@ -53,7 +62,8 @@ initConfigs = do
         return $ fromRight defaultConfigs configsM
     else return defaultConfigs
     where
-        defaultConfigs = Configs True 20 20 1000 800 mempty
+        defaultConfigs = Configs True 20 20 1000 800 defaultChar mempty
+        defaultChar = CharacterCfg Nothing
 
 
 class Monad m => ConfigsRead m where
