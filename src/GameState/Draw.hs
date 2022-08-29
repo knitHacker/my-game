@@ -41,7 +41,7 @@ drawBackground cfgs gs outs = [Texture ((textures outs) ! "outside") (Just mask)
 drawPlayer :: (MonadIO m) => OutputHandles -> GameState -> Draw m
 drawPlayer outs gs =
     case M.lookup "character" (textures outs) of
-        Nothing -> allBack
+        Nothing -> fallBack
         Just t -> Texture t Nothing $ Just rect
     where
         r = renderer outs
