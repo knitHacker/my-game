@@ -44,7 +44,7 @@ initOutputHandles cfgs = do
     textures <- loadAreaTextures cfgs r
     textures' <- loadCharTexture textures cfgs r
     print $ fst <$> M.toList textures'
-    return $ OutputHandles window r textures ratioX ratioY
+    return $ OutputHandles window r textures' ratioX ratioY
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
         screenHeight = fromIntegral $ windowSizeY cfgs

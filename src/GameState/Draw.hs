@@ -38,9 +38,14 @@ drawBackground cfgs gs outs = [Texture ((textures outs) ! "outside") (Just mask)
         boardHeight = boardSizeY cfgs
 
 
-drawPlayer :: (MonadIO m) => OutputHandles -> GameState -> SDL.Renderer -> Draw m
-drawPlayer outs gs r = Graphic Green [fillRectangle r rect]
+drawPlayer :: (MonadIO m) => OutputHandles -> GameState -> Draw m
+drawPlayer outs gs =
+    case M.lookup "character" (textures outs) of
+        Nothing -> allBack
+        Just t -> Texture t Nothing $ Just rect
     where
+        r = renderer outs
+        fallBack = Graphic Green [fillRectangle r rect]
         sizeX = 10
         sizeY = 10
         xOff = xOffset $ background gs
@@ -77,6 +82,6 @@ updateWindow = do
     gs <- readGameState
     let
         boardDraws = drawBackground cfgs gs outputs
-        player = drawPlayer outputs gs (renderer outputs)
+        player = drawPlayer outputs gs
         -- itemDraw = drawItems cfgs gs (renderer outputs)
     return (boardDraws ++ [] ++ [player])
