@@ -25,7 +25,7 @@ import GameState.Draw
 import OutputHandles.Types
 import OutputHandles.Draw
 
-type TextureMap = M.Map T.Text SDL.Texture
+type TextureMap = M.Map T.Text TextureEntry
 
 rendererConfig :: SDL.RendererConfig
 rendererConfig = SDL.RendererConfig
@@ -53,31 +53,28 @@ initOutputHandles cfgs = do
         ratioX = fromIntegral screenWidth / fromIntegral boardX
         ratioY = fromIntegral screenHeight / fromIntegral boardY
 
-loadTexture :: SDL.Renderer -> (T.Text, FilePath) -> IO (Maybe (T.Text, SDL.Texture))
-loadTexture r (name, textureFile) = do
-    path <- getDataFileName textureFile
+loadTexture :: SDL.Renderer -> (T.Text, TextureCfg) -> IO (Maybe (T.Text, TextureEntry))
+loadTexture r (name, textureCfg) = do
+    path <- getDataFileName $ file textureCfg
     fileExists <- doesFileExist path
     if fileExists
     then do
         t <- SDL.Image.loadTexture r path
-        return $ Just (name, t)
+        return $ Just (name, TextureEntry (sizeX textureCfg) (sizeY textureCfg) t)
     else do
-        putStrLn $ "Faied to load iamge: " ++ textureFile
+        putStrLn $ "Faied to load iamge: " ++ file textureCfg
         return Nothing
 
 loadCharTexture :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
-loadCharTexture tm cfgs r =
-    case characterFile $ character cfgs of
+loadCharTexture tm cfgs r = do
+    textureM <- loadTexture r ("character", character cfgs)
+    case textureM of
         Nothing -> return tm
-        Just fileName -> do
-            textureM <- loadTexture r ("character", fileName)
-            case textureM of
-                Nothing -> return tm
-                Just (name, tex) -> return $ M.insert name tex tm
+        Just (name, tex) -> return $ M.insert name tex tm
 
-loadAreaTextures :: Configs -> SDL.Renderer -> IO (M.Map T.Text SDL.Texture)
+loadAreaTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadAreaTextures cfgs r = do
-    textures <- mapM (loadTexture r) ((fmap areaFile) <$> areasCfg)
+    textures <- mapM (loadTexture r)  areasCfg
     let textures' = catMaybes textures
     return $ M.fromList textures'
     where

@@ -15,6 +15,7 @@ import qualified Data.Map.Strict as M
 
 import Configs
 import InputState
+import OutputHandles.Types
 
 import Utils
 
@@ -35,8 +36,9 @@ class Monad m => GameStateRead m where
 
 
 data Player = Player
-    { playerPosition :: (Int, Int)
-    , playerMovement :: Maybe Direction
+    { playerTexture :: TextureEntry
+    , playerPosition :: (Int, Int)
+    , playerMovement :: Maybe (Direction, Int)
     , playerItems :: M.Map Item Int
     }
 
@@ -54,7 +56,7 @@ data Item = Item
     } deriving (Show, Eq, Ord)
 
 data Background = Background
-    { area :: AreaCfg
+    { area :: TextureEntry
     , xOffset :: Int
     , yOffset :: Int
-    } deriving (Show, Eq, Ord)
+    }

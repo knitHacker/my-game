@@ -24,7 +24,7 @@ yBlocksShow = 10
 
 
 drawBackground :: (MonadIO m) => Configs -> GameState -> OutputHandles -> [Draw m]
-drawBackground cfgs gs outs = [Texture ((textures outs) ! "outside") (Just mask) Nothing]
+drawBackground cfgs gs outs = [Texture (texture (area (background gs))) (Just mask) Nothing]
     where
         mask = mkRect xStart yStart xEnd yEnd
         xOff = xOffset $ background gs
@@ -38,25 +38,22 @@ drawBackground cfgs gs outs = [Texture ((textures outs) ! "outside") (Just mask)
         boardHeight = boardSizeY cfgs
 
 
-drawPlayer :: (MonadIO m) => OutputHandles -> GameState -> Draw m
-drawPlayer outs gs =
-    case M.lookup "character" (textures outs) of
-        Nothing -> fallBack
-        Just t -> Texture t Nothing $ Just rect
+drawPlayer :: (MonadIO m) => GameState -> OutputHandles -> Draw m
+drawPlayer gs outs = Texture t Nothing $ Just rect
     where
-        r = renderer outs
-        fallBack = Graphic Green [fillRectangle r rect]
-        sizeX = 10
-        sizeY = 10
+        textureEntry = playerTexture $ gameStatePlayer gs
+        t = texture textureEntry
+        pSizeX = fromIntegral $ textureWidth textureEntry
+        pSizeY = fromIntegral $ textureHeight textureEntry
         xOff = xOffset $ background gs
         yOff = yOffset $ background gs
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
         xRat = ratioX outs
         yRat = ratioY outs
-        xPos = floor ((fromIntegral (xBoard - xOff)) * xRat - sizeX / 2)
-        yPos = floor ((fromIntegral (yBoard - yOff)) * yRat - sizeY / 2)
-        width = floor (xRat * sizeX)
-        height = floor (yRat * sizeY)
+        xPos = floor ((fromIntegral (xBoard - xOff)) * xRat - pSizeX / 2)
+        yPos = floor ((fromIntegral (yBoard - yOff)) * yRat - pSizeY / 2)
+        width = floor (xRat * pSizeX)
+        height = floor (yRat * pSizeY)
         rect = mkRect xPos yPos width height
 
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
@@ -82,6 +79,6 @@ updateWindow = do
     gs <- readGameState
     let
         boardDraws = drawBackground cfgs gs outputs
-        player = drawPlayer outputs gs
+        player = drawPlayer gs outputs
         -- itemDraw = drawItems cfgs gs (renderer outputs)
     return (boardDraws ++ [] ++ [player])

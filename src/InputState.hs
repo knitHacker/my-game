@@ -53,8 +53,7 @@ payloadToIntent _                     = InputState False Nothing
 
 getKey :: SDL.KeyboardEventData -> Maybe Direction
 getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Nothing
-getKey (SDL.KeyboardEventData _ SDL.Pressed True _) = Nothing
-getKey (SDL.KeyboardEventData _ SDL.Pressed False keysym) =
+getKey (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
   case SDL.keysymKeycode keysym of
     SDL.KeycodeUp     -> Just DUp
     SDL.KeycodeDown   -> Just DDown

@@ -4,8 +4,7 @@ module Configs
     ( Configs(..)
     , initConfigs
     , ConfigsRead(..)
-    , AreaCfg(..)
-    , CharacterCfg(..)
+    , TextureCfg(..)
     ) where
 
 import Control.Monad
@@ -21,21 +20,15 @@ import qualified Data.Text as T
 configFile :: FilePath
 configFile = "data/configs/game.json"
 
-data CharacterCfg = CharacterCfg
-    { characterFile :: Maybe FilePath
-    } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON CharacterCfg
-instance FromJSON CharacterCfg
-
-data AreaCfg = Area
+data TextureCfg = TextureCfg
     { sizeX :: Int
     , sizeY :: Int
-    , areaFile :: FilePath
+    , file :: FilePath
     } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON AreaCfg
-instance FromJSON AreaCfg
+instance ToJSON TextureCfg
+instance FromJSON TextureCfg
 
 data Configs = Configs
     { debug :: Bool
@@ -43,8 +36,8 @@ data Configs = Configs
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
-    , character :: CharacterCfg
-    , areas :: M.Map T.Text AreaCfg
+    , character :: TextureCfg
+    , areas :: M.Map T.Text TextureCfg
     } deriving (Generic, Show, Eq)
 
 
@@ -59,11 +52,10 @@ initConfigs = do
     then do
         configsM <- eitherDecodeFileStrict path
         print configsM
-        return $ fromRight defaultConfigs configsM
-    else return defaultConfigs
-    where
-        defaultConfigs = Configs True 20 20 1000 800 defaultChar mempty
-        defaultChar = CharacterCfg Nothing
+        case configsM of
+            Left err -> error ("Failed to parse config file" ++ (show err))
+            Right configs -> return configs
+    else error "Missing config file required for game"
 
 
 class Monad m => ConfigsRead m where

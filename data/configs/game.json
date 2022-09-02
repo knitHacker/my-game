@@ -1,17 +1,19 @@
 {
     "debug": true,
-    "windowSizeX": 1000,
-    "windowSizeY": 800,
-    "boardSizeX": 100,
-    "boardSizeY": 100,
+    "windowSizeX": 1200,
+    "windowSizeY": 1000,
+    "boardSizeX": 250,
+    "boardSizeY": 250,
     "character": {
-        "characterFile": "assets/main_character.png"
+        "sizeX": 32,
+        "sizeY": 32,
+        "file": "assets/main_character.png"
     },
     "areas": {
         "outside": {
             "sizeX": 400,
             "sizeY": 300,
-            "areaFile": "assets/outside.png"
+            "file": "assets/outside.png"
         }
     }
 }

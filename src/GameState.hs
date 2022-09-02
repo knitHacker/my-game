@@ -8,9 +8,10 @@ import Control.Monad
 import Configs
 import InputState
 import GameState.Types
+import OutputHandles.Types
 
 import qualified Data.Text as T
-import SDL
+import qualified SDL
 
 import Utils
 
@@ -19,8 +20,9 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 
-initPlayer :: Player
-initPlayer = Player (0, 0) Nothing mempty
+
+initPlayer :: OutputHandles -> Player
+initPlayer outs = Player ((textures outs) ! "character") (0, 10) Nothing mempty
 
 initItems :: Configs -> IO ItemManager
 initItems cfgs = do
@@ -35,13 +37,14 @@ initItems cfgs = do
         maxItems = div boardSize 10
 
 
-initGameState :: Configs -> IO GameState
-initGameState cfgs = do
+initBackground :: OutputHandles -> Background
+initBackground outs = Background ((textures outs) ! "outside") 0 0
+
+
+initGameState :: Configs -> OutputHandles -> IO GameState
+initGameState cfgs outs = do
     items <- initItems cfgs
-    return $ GameState background initPlayer items World
-    where
-        area = ((areas cfgs) ! "outside")
-        background = Background area 0 0
+    return $ GameState (initBackground outs) (initPlayer outs) items World
 
 randomPosition :: (MonadIO m) => Configs -> m (Int, Int)
 randomPosition cfgs = do
@@ -74,8 +77,8 @@ updateBackground cfgs back player = back { xOffset = getOffset playerX windowX x
     where
         windowX = boardSizeX cfgs
         windowY = boardSizeY cfgs
-        xMax = sizeX $ area back
-        yMax = sizeY $ area back
+        xMax = textureWidth $ area back
+        yMax = textureHeight $ area back
         (playerX, playerY) = playerPosition $ player
         getOffset player window areaMax
             | player < (div window 2) = 0
@@ -98,21 +101,30 @@ collisionCheck gs =
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
-updatePlayer back player dir
-    | playerMovement player == Just dir = player
-    | otherwise = player { playerPosition = (x'', y''), playerMovement = Just dir }
+updatePlayer back player@(Player cfg pos (Just (d, l)) items) newDir
+    | d == newDir && l >= 2 = player {playerPosition = newPosition back player newDir, playerMovement = Just (newDir, 0) }
+    | d == newDir = player {playerMovement = Just (d, l + 1)}
+    | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Just (newDir, 0) }
+updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Just (dir, 0) }
+
+
+newPosition :: Background -> Player -> Direction -> (Int, Int)
+newPosition back player dir = (x'', y'')
     where
+        charSizeX = textureWidth $ playerTexture player
+        charSizeY = textureHeight $ playerTexture player
         (xMove, yMove) = updatePosition dir
-        xMax = (sizeX $ area back) - 5
-        yMax = (sizeY $ area back) - 5
+        xMax = (textureWidth $ area back) - charSizeX
+        yMax = (textureHeight $ area back) - charSizeY
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove
         x'' = if x' < xMax  && x' >= 0 then x' else x
         y'' = if y' < yMax && y' >= 0 then y' else y
 
+
 updatePosition :: Direction -> (Int, Int)
-updatePosition DUp = (0, -5)
-updatePosition DDown = (0, 5)
-updatePosition DLeft = (-5, 0)
-updatePosition DRight = (5, 0)
+updatePosition DUp = (0, -2)
+updatePosition DDown = (0, 2)
+updatePosition DLeft = (-2, 0)
+updatePosition DRight = (2, 0)
