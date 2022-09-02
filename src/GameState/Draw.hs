@@ -18,6 +18,7 @@ import GameState
 import GameState.Types
 import OutputHandles.Types
 import OutputHandles.Draw
+import InputState
 
 xBlocksShow = 10
 yBlocksShow = 10
@@ -39,7 +40,7 @@ drawBackground cfgs gs outs = [Texture (texture (area (background gs))) (Just ma
 
 
 drawPlayer :: (MonadIO m) => GameState -> OutputHandles -> Draw m
-drawPlayer gs outs = Texture t Nothing $ Just rect
+drawPlayer gs outs = Texture t (Just charRect) (Just rect)
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -50,11 +51,32 @@ drawPlayer gs outs = Texture t Nothing $ Just rect
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
         xRat = ratioX outs
         yRat = ratioY outs
-        xPos = floor ((fromIntegral (xBoard - xOff)) * xRat - pSizeX / 2)
-        yPos = floor ((fromIntegral (yBoard - yOff)) * yRat - pSizeY / 2)
+        xPos = floor (((fromIntegral (xBoard - xOff)) - pSizeX / 2) * xRat)
+        yPos = floor (((fromIntegral (yBoard - yOff)) - pSizeY / 2) * yRat)
         width = floor (xRat * pSizeX)
         height = floor (yRat * pSizeY)
         rect = mkRect xPos yPos width height
+        charRect = getCharacter $ gameStatePlayer gs
+
+getCharacter :: Player -> SDL.Rectangle CInt
+getCharacter player = mkRect xPos yPos width height
+    where
+        xPos = charSizeX * entryX
+        yPos = charSizeY * entryY
+        width = charSizeX
+        height = charSizeY
+        charSizeX = fromIntegral $ textureWidth $ playerTexture player
+        charSizeY = fromIntegral $ textureHeight $ playerTexture player
+        (entryY, entryX) = case playerMovement player of
+            Left d -> (getDirectionNum d, 0)
+            Right (d, n) -> (getDirectionNum d, fromIntegral n)
+
+-- TODO: change this to derive enum (change order on character sheet)
+getDirectionNum :: Direction -> CInt
+getDirectionNum DUp = 3
+getDirectionNum DDown = 0
+getDirectionNum DLeft = 2
+getDirectionNum DRight = 1
 
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
 drawItems cfgs gs r = Graphic Red (drawItem <$> M.keys (gameItems (gameStateItemManager gs)))

@@ -38,7 +38,7 @@ class Monad m => GameStateRead m where
 data Player = Player
     { playerTexture :: TextureEntry
     , playerPosition :: (Int, Int)
-    , playerMovement :: Maybe (Direction, Int)
+    , playerMovement :: Either Direction (Direction, Int)
     , playerItems :: M.Map Item Int
     }
 

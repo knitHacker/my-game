@@ -21,8 +21,13 @@ import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 
 
+-- bad literals in code
 initPlayer :: OutputHandles -> Player
-initPlayer outs = Player ((textures outs) ! "character") (0, 10) Nothing mempty
+initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
+    where
+        textureEntry = textures outs ! "character"
+        startX = div (textureWidth textureEntry) 2
+        startY = div (textureHeight textureEntry) 2
 
 initItems :: Configs -> IO ItemManager
 initItems cfgs = do
@@ -37,6 +42,7 @@ initItems cfgs = do
         maxItems = div boardSize 10
 
 
+-- bad literals in code
 initBackground :: OutputHandles -> Background
 initBackground outs = Background ((textures outs) ! "outside") 0 0
 
@@ -58,13 +64,18 @@ randomPosition cfgs = do
         boardHeight = boardSizeY cfgs
 
 
+stopMoveDirection :: Player -> Player
+stopMoveDirection player = case playerMovement player of
+    Left d -> player
+    Right (d, _) -> player { playerMovement = Left d }
+
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
 updateGameState = do
     cfgs <- readConfigs
     gs <- readGameState
     inputs <- readInputState
     player' <- case inputStateDirection inputs of
-        Nothing -> return $ (gameStatePlayer gs) { playerMovement = Nothing }
+        Nothing -> return $ stopMoveDirection $ gameStatePlayer gs
         Just dir -> return $ updatePlayer (background gs) (gameStatePlayer gs) dir
     let background' = updateBackground cfgs (background gs) player'
     return $ collisionCheck (gs { background = background', gameStatePlayer = player' })
@@ -101,30 +112,32 @@ collisionCheck gs =
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
-updatePlayer back player@(Player cfg pos (Just (d, l)) items) newDir
-    | d == newDir && l >= 2 = player {playerPosition = newPosition back player newDir, playerMovement = Just (newDir, 0) }
-    | d == newDir = player {playerMovement = Just (d, l + 1)}
-    | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Just (newDir, 0) }
-updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Just (dir, 0) }
+updatePlayer back player@(Player cfg pos (Right (d, l)) items) newDir
+    | d == newDir && l >= 6 = player {playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0) }
+    | d == newDir = player {playerMovement = Right (d, l + 1)}
+    | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0) }
+updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Right (dir, 0) }
 
 
 newPosition :: Background -> Player -> Direction -> (Int, Int)
 newPosition back player dir = (x'', y'')
     where
-        charSizeX = textureWidth $ playerTexture player
-        charSizeY = textureHeight $ playerTexture player
+        charSizeX = div (textureWidth (playerTexture player)) 2
+        charSizeY = div (textureHeight (playerTexture player)) 2
         (xMove, yMove) = updatePosition dir
         xMax = (textureWidth $ area back) - charSizeX
         yMax = (textureHeight $ area back) - charSizeY
+        xMin = charSizeX
+        yMin = charSizeY
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove
-        x'' = if x' < xMax  && x' >= 0 then x' else x
-        y'' = if y' < yMax && y' >= 0 then y' else y
+        x'' = if x' < xMax  && x' >= xMin then x' else x
+        y'' = if y' < yMax && y' >= yMin then y' else y
 
 
 updatePosition :: Direction -> (Int, Int)
-updatePosition DUp = (0, -2)
-updatePosition DDown = (0, 2)
-updatePosition DLeft = (-2, 0)
-updatePosition DRight = (2, 0)
+updatePosition DUp = (0, -1)
+updatePosition DDown = (0, 1)
+updatePosition DLeft = (-1, 0)
+updatePosition DRight = (1, 0)

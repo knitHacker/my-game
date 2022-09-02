@@ -17,7 +17,7 @@ import qualified Data.Text as T
 
 data Colour = White | Black | Red | Blue | Green | Yellow
 
-data Draw m = Graphic Colour [m ()] | Texture SDL.Texture (Maybe (SDL.Rectangle CInt)) (Maybe (SDL.Rectangle CInt))
+data Draw m = Graphic Colour [m ()] | Texture !SDL.Texture !(Maybe (SDL.Rectangle CInt)) !(Maybe (SDL.Rectangle CInt))
 
 data TextureEntry = TextureEntry
     { textureWidth :: Int

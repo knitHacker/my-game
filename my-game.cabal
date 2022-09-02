@@ -20,11 +20,12 @@ extra-source-files:
     ChangeLog.md
     data/configs/game.json
     assets/main_character.png
+    assets/main_character_sheet.png
     assets/outside.png
 data-files:
     data/configs/game.json
     assets/outside.png
-    assets/main_character.png
+    assets/main_character_sheet.png
 
 source-repository head
   type: git
