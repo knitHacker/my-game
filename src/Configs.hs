@@ -38,6 +38,7 @@ data Configs = Configs
     , windowSizeY :: Int
     , character :: TextureCfg
     , areas :: M.Map T.Text TextureCfg
+    , items :: M.Map T.Text TextureCfg
     } deriving (Generic, Show, Eq)
 
 

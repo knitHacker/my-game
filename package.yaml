@@ -16,6 +16,7 @@ data-files:
 - data/configs/game.json
 - assets/outside.png
 - assets/main_character_sheet.png
+- assets/mushroom.png
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

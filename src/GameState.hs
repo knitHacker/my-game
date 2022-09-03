@@ -67,7 +67,7 @@ randomPosition cfgs = do
 stopMoveDirection :: Player -> Player
 stopMoveDirection player = case playerMovement player of
     Left d -> player
-    Right (d, _) -> player { playerMovement = Left d }
+    Right (d, _, _) -> player { playerMovement = Left d }
 
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
 updateGameState = do
@@ -112,11 +112,12 @@ collisionCheck gs =
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
-updatePlayer back player@(Player cfg pos (Right (d, l)) items) newDir
-    | d == newDir && l >= 6 = player {playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0) }
-    | d == newDir = player {playerMovement = Right (d, l + 1)}
-    | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0) }
-updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Right (dir, 0) }
+updatePlayer back player@(Player cfg pos (Right (d, l, f)) items) newDir
+    | d == newDir && l >= 6 = player {playerPosition =
+        newPosition back player newDir, playerMovement = Right (newDir, 0, mod (f + 1) 8 ) }
+    | d == newDir = player {playerMovement = Right (d, l + 1, f)}
+    | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0, 0) }
+updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Right (dir, 0, 0) }
 
 
 newPosition :: Background -> Player -> Direction -> (Int, Int)
@@ -137,7 +138,7 @@ newPosition back player dir = (x'', y'')
 
 
 updatePosition :: Direction -> (Int, Int)
-updatePosition DUp = (0, -1)
-updatePosition DDown = (0, 1)
-updatePosition DLeft = (-1, 0)
-updatePosition DRight = (1, 0)
+updatePosition DUp = (0, -5)
+updatePosition DDown = (0, 5)
+updatePosition DLeft = (-5, 0)
+updatePosition DRight = (5, 0)

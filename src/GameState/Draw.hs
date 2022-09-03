@@ -68,15 +68,15 @@ getCharacter player = mkRect xPos yPos width height
         charSizeX = fromIntegral $ textureWidth $ playerTexture player
         charSizeY = fromIntegral $ textureHeight $ playerTexture player
         (entryY, entryX) = case playerMovement player of
-            Left d -> (getDirectionNum d, 0)
-            Right (d, n) -> (getDirectionNum d, fromIntegral n)
+            Left d -> (4, getDirectionNum d)
+            Right (d, _, f) -> (getDirectionNum d, fromIntegral f)
 
 -- TODO: change this to derive enum (change order on character sheet)
 getDirectionNum :: Direction -> CInt
-getDirectionNum DUp = 3
-getDirectionNum DDown = 0
+getDirectionNum DUp = 0
+getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
-getDirectionNum DRight = 1
+getDirectionNum DRight = 3
 
 drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
 drawItems cfgs gs r = Graphic Red (drawItem <$> M.keys (gameItems (gameStateItemManager gs)))

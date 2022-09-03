@@ -5,7 +5,7 @@
     "boardSizeX": 250,
     "boardSizeY": 250,
     "character": {
-        "sizeX": 32,
+        "sizeX": 16,
         "sizeY": 32,
         "file": "assets/main_character_sheet.png"
     },
@@ -14,6 +14,13 @@
             "sizeX": 400,
             "sizeY": 300,
             "file": "assets/outside.png"
+        }
+    },
+    "items": {
+        "mushroom": {
+            "sizeX": 8,
+            "sizeY": 8,
+            "file": "assets/mushroom.png"
         }
     }
 }
