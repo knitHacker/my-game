@@ -29,17 +29,21 @@ initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
         startX = div (textureWidth textureEntry) 2
         startY = div (textureHeight textureEntry) 2
 
-initItems :: Configs -> IO ItemManager
-initItems cfgs = do
+initItems :: OutputHandles -> Background -> IO ItemManager
+initItems outs back = do
     numberOfItems <- randomValue minItems maxItems
-    itemPos <- replicateM numberOfItems $ randomPosition cfgs
-    return $ ItemManager $ M.fromList $ zip itemPos $ repeat $ Item Blob
+    itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
+    return $ ItemManager $ M.fromList $ zip itemPos $ repeat $ Item mushroomEntry Mushroom
     where
-        boardWidth = boardSizeX cfgs
-        boardHeight = boardSizeY cfgs
+        mushroomEntry = textures outs ! "mushroom"
+        backT = area back
+        boardWidth = textureWidth backT
+        boardHeight = textureHeight backT
         boardSize = boardWidth * boardHeight
-        minItems = div boardSize 20
-        maxItems = div boardSize 10
+        minItems = 10
+        maxItems = 50
+        iW = div (textureWidth mushroomEntry) 2
+        iH = div (textureHeight mushroomEntry) 2
 
 
 -- bad literals in code
@@ -49,19 +53,15 @@ initBackground outs = Background ((textures outs) ! "outside") 0 0
 
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
-    items <- initItems cfgs
-    return $ GameState (initBackground outs) (initPlayer outs) items World
+    let back = initBackground outs
+    items <- initItems outs back
+    return $ GameState back (initPlayer outs) items World
 
-randomPosition :: (MonadIO m) => Configs -> m (Int, Int)
-randomPosition cfgs = do
-    xPos <- randomValue 0 (boardWidth - 1)
-    yPos <- randomValue 0 (boardHeight - 1)
-    if (xPos, yPos) == (0, 0)
-        then randomPosition cfgs
-        else return (xPos, yPos)
-    where
-        boardWidth = boardSizeX cfgs
-        boardHeight = boardSizeY cfgs
+randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
+randomPosition width height iW iH = do
+    xPos <- randomValue iW (width - iW)
+    yPos <- randomValue iH (height - iH)
+    return (xPos, yPos)
 
 
 stopMoveDirection :: Player -> Player
@@ -102,11 +102,14 @@ collisionCheck gs =
         Nothing -> gs
         Just item ->
             let items' = M.delete playerPos items
-                player' = player { playerItems = (M.insertWith update item 1 (playerItems player)) }
+                player' = player { playerItems = (M.insertWith update (itemType item) 1 (playerItems player)) }
             in gs { gameStatePlayer = player', gameStateItemManager = (ItemManager items') }
     where
         items = gameItems $ gameStateItemManager gs
         player = gameStatePlayer gs
+        playerT = playerTexture player
+        playerWdith = textureWidth playerT
+        playerHeight = textureHeight playerT
         playerPos = playerPosition $ player
         update old new = old + new
 

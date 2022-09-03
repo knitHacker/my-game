@@ -39,7 +39,7 @@ data Player = Player
     { playerTexture :: TextureEntry
     , playerPosition :: (Int, Int)
     , playerMovement :: Either Direction (Direction, Int, Int)
-    , playerItems :: M.Map Item Int
+    , playerItems :: M.Map ItemType Int
     }
 
 
@@ -48,12 +48,13 @@ data ItemManager = ItemManager
     }
 
 
-data ItemType = Blob deriving (Show, Eq, Ord)
+data ItemType = Mushroom deriving (Show, Eq, Ord)
 
 
 data Item = Item
-    { itemType :: ItemType
-    } deriving (Show, Eq, Ord)
+    { itemTexture :: TextureEntry
+    , itemType :: ItemType
+    }
 
 data Background = Background
     { area :: TextureEntry

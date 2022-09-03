@@ -39,7 +39,7 @@ drawBackground draws cfgs gs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) 
 
 
 drawPlayer :: Draws -> GameState -> Draws
-drawPlayer draws gs = M.insert (yPos, xPos, 0) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer draws gs = M.insert (bottom, xPos, 0) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -51,6 +51,7 @@ drawPlayer draws gs = M.insert (yPos, xPos, 0) (Draw t xPos yPos pSizeX pSizeY (
         xPos = (fromIntegral (xBoard - xOff)) - div pSizeX 2
         yPos = (fromIntegral (yBoard - yOff)) - div pSizeY 2
         charRect = getCharacter $ gameStatePlayer gs
+        bottom = (fromIntegral (yBoard - yOff)) + (div pSizeY 2)
 
 getCharacter :: Player -> SDL.Rectangle CInt
 getCharacter player = mkRect xPos yPos width height
@@ -72,26 +73,30 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: Draws -> Configs -> GameState -> SDL.Renderer -> Draws
-drawItems draws cfgs gs r = undefined
+drawItems :: Draws -> Configs -> GameState -> Draws
+drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.toList (gameItems (gameStateItemManager gs)))
     where
         back = background gs
         backArea = area back
         t = texture backArea
         w = fromIntegral $ textureWidth backArea
         h = fromIntegral $ textureHeight backArea
-
-        screenWidth = fromIntegral $ windowSizeX cfgs
-        screenHeight = fromIntegral $ windowSizeY cfgs
+        xOff = xOffset back
+        yOff = yOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
-        intervalW = div screenWidth (fromIntegral boardWidth)
-        intervalH = div screenHeight (fromIntegral boardHeight)
-        getXPos xPos = (fromIntegral xPos) * intervalW + div intervalW 4
-        getYPos yPos = (fromIntegral yPos) * intervalH + div intervalH 4
-        width = div intervalW 2
-        height = div intervalH 2
-        drawItem (xPos, yPos) = fillRectangle r $ mkRect (getXPos xPos) (getYPos yPos) width height
+
+drawItem :: Int -> Int -> Int -> Int -> Draws -> ((Int, Int), Item) -> Draws
+drawItem xStart yStart width height d ((xPos, yPos), (Item tE _))
+    | yPos < yStart || xPos < xStart || yPos > yStart + height || xPos > xStart + width = d
+    | otherwise = M.insert (bottom, xPos', 1) (Draw t xPos' yPos' w h Nothing) d
+    where
+        t = texture tE
+        w = fromIntegral $ textureWidth tE
+        h = fromIntegral $ textureWidth tE
+        xPos' = (fromIntegral (xPos - xStart)) - div w 2
+        yPos' = (fromIntegral (yPos - yStart)) - div h 2
+        bottom = yPos' + h
 
 
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m Draws
@@ -101,5 +106,5 @@ updateWindow = do
     let
         draws = drawBackground mempty cfgs gs
         draws' = drawPlayer draws gs
-        -- itemDraw = drawItems cfgs gs (renderer outputs)
-    return draws'
+        draws'' =  drawItems draws' cfgs gs
+    return draws''
