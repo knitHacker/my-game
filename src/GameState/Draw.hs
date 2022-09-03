@@ -21,14 +21,14 @@ import OutputHandles.Draw
 import InputState
 
 
-drawBackground :: Draws -> Configs -> GameState -> OutputHandles -> Draws
-drawBackground draws cfgs gs outs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) draws
+drawBackground :: Draws -> Configs -> GameState -> Draws
+drawBackground draws cfgs gs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) draws
     where
         back = background gs
         backArea = area back
         t = texture backArea
-        w = floor $ xRat * (fromIntegral (textureWidth backArea))
-        h = floor $ yRat * (fromIntegral (textureHeight backArea))
+        w = fromIntegral $ textureWidth backArea
+        h = fromIntegral $ textureHeight backArea
         xOff = xOffset back
         yOff = yOffset back
         xStart = fromIntegral xOff
@@ -36,12 +36,10 @@ drawBackground draws cfgs gs outs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just ma
         boardWidth = fromIntegral $ boardSizeX cfgs
         boardHeight = fromIntegral $ boardSizeY cfgs
         mask = mkRect xStart yStart boardWidth boardHeight
-        xRat = ratioX outs
-        yRat = ratioY outs
 
 
-drawPlayer :: Draws -> GameState -> OutputHandles -> Draws
-drawPlayer draws gs outs = M.insert (yPos, xPos, 0) (Draw t xPos yPos width height (Just charRect)) draws
+drawPlayer :: Draws -> GameState -> Draws
+drawPlayer draws gs = M.insert (yPos, xPos, 0) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -50,13 +48,8 @@ drawPlayer draws gs outs = M.insert (yPos, xPos, 0) (Draw t xPos yPos width heig
         xOff = xOffset $ background gs
         yOff = yOffset $ background gs
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
-        xRat = ratioX outs
-        yRat = ratioY outs
-        xPos = floor (((fromIntegral (xBoard - xOff)) - pSizeX / 2) * xRat)
-        yPos = floor (((fromIntegral (yBoard - yOff)) - pSizeY / 2) * yRat)
-        width = floor (xRat * pSizeX)
-        height = floor (yRat * pSizeY)
-        rect = mkRect xPos yPos width height
+        xPos = (fromIntegral (xBoard - xOff)) - div pSizeX 2
+        yPos = (fromIntegral (yBoard - yOff)) - div pSizeY 2
         charRect = getCharacter $ gameStatePlayer gs
 
 getCharacter :: Player -> SDL.Rectangle CInt
@@ -82,6 +75,12 @@ getDirectionNum DRight = 3
 drawItems :: Draws -> Configs -> GameState -> SDL.Renderer -> Draws
 drawItems draws cfgs gs r = undefined
     where
+        back = background gs
+        backArea = area back
+        t = texture backArea
+        w = fromIntegral $ textureWidth backArea
+        h = fromIntegral $ textureHeight backArea
+
         screenWidth = fromIntegral $ windowSizeX cfgs
         screenHeight = fromIntegral $ windowSizeY cfgs
         boardWidth = boardSizeX cfgs
@@ -95,13 +94,12 @@ drawItems draws cfgs gs r = undefined
         drawItem (xPos, yPos) = fillRectangle r $ mkRect (getXPos xPos) (getYPos yPos) width height
 
 
-updateWindow :: (MonadIO m, OutputRead m, ConfigsRead m, GameStateRead m) => m Draws
+updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m Draws
 updateWindow = do
-    outputs <- getOutputs
     cfgs <- readConfigs
     gs <- readGameState
     let
-        draws = drawBackground mempty cfgs gs outputs
-        draws' = drawPlayer draws gs outputs
+        draws = drawBackground mempty cfgs gs
+        draws' = drawPlayer draws gs
         -- itemDraw = drawItems cfgs gs (renderer outputs)
     return draws'

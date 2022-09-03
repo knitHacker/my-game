@@ -25,7 +25,7 @@ data Draw = Draw
     , drawPosY :: CInt
     , drawWidth :: CInt
     , drawHeight :: CInt
-    , drawTexturePosX :: Maybe (SDL.Rectangle CInt)
+    , drawMask :: Maybe (SDL.Rectangle CInt)
     }
 
 data TextureEntry = TextureEntry

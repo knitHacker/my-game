@@ -57,14 +57,26 @@ initWindow r = do
     SDL.present r
 
 
-drawAll :: (MonadIO m, ConfigsRead m) => SDL.Renderer -> M.Map (CInt, CInt, Int) Draw -> m ()
-drawAll r drawings = do
+drawAll :: (MonadIO m, OutputRead m) => Draws -> m ()
+drawAll drawings = do
+    outs <- getOutputs
+    let r = renderer outs
+        ratX = ratioX outs
+        ratY = ratioY outs
+        drawings' = scaleDraw ratX ratY <$> drawings
     setColor r White
     SDL.clear r
-    mapM_ (draw r) drawings
+    mapM_ (draw r) drawings'
     SDL.present r
 
 draw :: (MonadIO m) => SDL.Renderer -> Draw -> m ()
-draw r d = SDL.copy r (drawTexture d) (drawTexturePosX d) (Just pos)
+draw r d = do
+    SDL.copy r (drawTexture d) (drawMask d) (Just pos)
     where
         pos = mkRect (drawPosX d) (drawPosY d) (drawWidth d) (drawHeight d)
+
+
+scaleDraw :: Double -> Double -> Draw -> Draw
+scaleDraw rX rY (Draw t pX pY w h m) = Draw t (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) m
+    where
+        scale o r = floor ((fromIntegral o) * r)
