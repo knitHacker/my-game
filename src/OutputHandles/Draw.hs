@@ -16,10 +16,12 @@ import SDL.Vect
 import SDL                    (($=))
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Data.Map.Strict as M
 
 import Configs
 import GameState
 import OutputHandles.Types
+
 
 
 mkRect :: a -> a -> a -> a-> SDL.Rectangle a
@@ -48,9 +50,6 @@ setColor r Blue   = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
 setColor r Yellow = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
 
 
-drawTexture :: (MonadIO m) => SDL.Renderer -> SDL.Texture -> Maybe (SDL.Rectangle CInt) -> Maybe (SDL.Rectangle CInt) -> m ()
-drawTexture = SDL.copy
-
 initWindow :: (MonadIO m) => SDL.Renderer -> m ()
 initWindow r = do
     setColor r Black
@@ -58,15 +57,14 @@ initWindow r = do
     SDL.present r
 
 
-drawAll :: (MonadIO m, ConfigsRead m) => SDL.Renderer -> [Draw m] -> m ()
+drawAll :: (MonadIO m, ConfigsRead m) => SDL.Renderer -> M.Map (CInt, CInt, Int) Draw -> m ()
 drawAll r drawings = do
     setColor r White
     SDL.clear r
     mapM_ (draw r) drawings
     SDL.present r
 
-draw :: (MonadIO m) => SDL.Renderer -> Draw m -> m ()
-draw r (Graphic color action) = do
-    setColor r color
-    mapM_ id action
-draw r (Texture t mask pos) = drawTexture r t mask pos
+draw :: (MonadIO m) => SDL.Renderer -> Draw -> m ()
+draw r d = SDL.copy r (drawTexture d) (drawTexturePosX d) (Just pos)
+    where
+        pos = mkRect (drawPosX d) (drawPosY d) (drawWidth d) (drawHeight d)

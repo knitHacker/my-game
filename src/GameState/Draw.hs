@@ -20,27 +20,28 @@ import OutputHandles.Types
 import OutputHandles.Draw
 import InputState
 
-xBlocksShow = 10
-yBlocksShow = 10
 
-
-drawBackground :: (MonadIO m) => Configs -> GameState -> OutputHandles -> [Draw m]
-drawBackground cfgs gs outs = [Texture (texture (area (background gs))) (Just mask) Nothing]
+drawBackground :: Draws -> Configs -> GameState -> OutputHandles -> Draws
+drawBackground draws cfgs gs outs = M.insert (-1, -1, -1) (Draw t 0 0 w h (Just mask)) draws
     where
-        mask = mkRect xStart yStart xEnd yEnd
-        xOff = xOffset $ background gs
-        yOff = yOffset $ background gs
+        back = background gs
+        backArea = area back
+        t = texture backArea
+        w = floor $ xRat * (fromIntegral (textureWidth backArea))
+        h = floor $ yRat * (fromIntegral (textureHeight backArea))
+        xOff = xOffset back
+        yOff = yOffset back
         xStart = fromIntegral xOff
         yStart = fromIntegral yOff
-        xEnd = fromIntegral boardWidth
-        yEnd = fromIntegral boardHeight
+        boardWidth = fromIntegral $ boardSizeX cfgs
+        boardHeight = fromIntegral $ boardSizeY cfgs
+        mask = mkRect xStart yStart boardWidth boardHeight
+        xRat = ratioX outs
+        yRat = ratioY outs
 
-        boardWidth = boardSizeX cfgs
-        boardHeight = boardSizeY cfgs
 
-
-drawPlayer :: (MonadIO m) => GameState -> OutputHandles -> Draw m
-drawPlayer gs outs = Texture t (Just charRect) (Just rect)
+drawPlayer :: Draws -> GameState -> OutputHandles -> Draws
+drawPlayer draws gs outs = M.insert (yPos, xPos, 0) (Draw t xPos yPos width height (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -78,8 +79,8 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: (MonadIO m) => Configs -> GameState -> SDL.Renderer -> Draw m
-drawItems cfgs gs r = Graphic Red (drawItem <$> M.keys (gameItems (gameStateItemManager gs)))
+drawItems :: Draws -> Configs -> GameState -> SDL.Renderer -> Draws
+drawItems draws cfgs gs r = undefined
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
         screenHeight = fromIntegral $ windowSizeY cfgs
@@ -94,13 +95,13 @@ drawItems cfgs gs r = Graphic Red (drawItem <$> M.keys (gameItems (gameStateItem
         drawItem (xPos, yPos) = fillRectangle r $ mkRect (getXPos xPos) (getYPos yPos) width height
 
 
-updateWindow :: (MonadIO m, OutputRead m, ConfigsRead m, GameStateRead m) => m [Draw m]
+updateWindow :: (MonadIO m, OutputRead m, ConfigsRead m, GameStateRead m) => m Draws
 updateWindow = do
     outputs <- getOutputs
     cfgs <- readConfigs
     gs <- readGameState
     let
-        boardDraws = drawBackground cfgs gs outputs
-        player = drawPlayer gs outputs
+        draws = drawBackground mempty cfgs gs outputs
+        draws' = drawPlayer draws gs outputs
         -- itemDraw = drawItems cfgs gs (renderer outputs)
-    return (boardDraws ++ [] ++ [player])
+    return draws'

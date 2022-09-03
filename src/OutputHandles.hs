@@ -42,7 +42,8 @@ initOutputHandles cfgs = do
     -- clears the screen
     initWindow r
     textures <- loadAreaTextures cfgs r
-    textures' <- loadCharTexture textures cfgs r
+    itemTextures <- loadItemTextures cfgs r
+    textures' <- loadCharTexture (M.union textures itemTextures) cfgs r
     print $ fst <$> M.toList textures'
     return $ OutputHandles window r textures' ratioX ratioY
     where
@@ -80,6 +81,16 @@ loadAreaTextures cfgs r = do
     where
         areasCfg = M.toList $ areas cfgs
 
+loadItemTextures :: Configs -> SDL.Renderer -> IO TextureMap
+loadItemTextures cfgs r = do
+    textures <- mapM (loadTexture r)  itemCfg
+    let textures' = catMaybes textures
+    return $ M.fromList textures'
+    where
+        itemCfg = M.toList $ items cfgs
+
+
+
 cleanupOutputHandles :: OutputHandles -> IO ()
 cleanupOutputHandles outs = do
     SDL.destroyRenderer $ renderer outs
@@ -87,7 +98,7 @@ cleanupOutputHandles outs = do
     SDL.quit
 
 
-executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => [Draw m] -> m ()
+executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => Draws -> m ()
 executeDraw draws = do
     outputs <- getOutputs
     drawAll (renderer outputs) draws

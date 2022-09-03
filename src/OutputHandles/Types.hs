@@ -5,6 +5,7 @@ module OutputHandles.Types
     , Draw(..)
     , Colour(..)
     , TextureEntry(..)
+    , Draws
     ) where
 
 import Foreign.C.Types
@@ -14,10 +15,18 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 
+type Draws = M.Map (CInt, CInt, Int) Draw
 
 data Colour = White | Black | Red | Blue | Green | Yellow
 
-data Draw m = Graphic Colour [m ()] | Texture !SDL.Texture !(Maybe (SDL.Rectangle CInt)) !(Maybe (SDL.Rectangle CInt))
+data Draw = Draw
+    { drawTexture :: SDL.Texture
+    , drawPosX :: CInt
+    , drawPosY :: CInt
+    , drawWidth :: CInt
+    , drawHeight :: CInt
+    , drawTexturePosX :: Maybe (SDL.Rectangle CInt)
+    }
 
 data TextureEntry = TextureEntry
     { textureWidth :: Int
