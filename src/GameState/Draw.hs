@@ -22,7 +22,7 @@ import InputState
 
 
 drawBackground :: Draws -> Configs -> GameState -> OutputHandles -> Draws
-drawBackground draws cfgs gs outs = M.insert (-1, -1, -1) (Draw t 0 0 w h (Just mask)) draws
+drawBackground draws cfgs gs outs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) draws
     where
         back = background gs
         backArea = area back
