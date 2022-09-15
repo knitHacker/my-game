@@ -9,6 +9,7 @@ import Configs
 import InputState
 import GameState.Types
 import OutputHandles.Types
+import GameState.Collision
 
 import qualified Data.Text as T
 import qualified SDL
@@ -19,6 +20,7 @@ import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
+import Data.Unique
 
 
 -- bad literals in code
@@ -55,7 +57,21 @@ initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
     let back = initBackground outs
     items <- initItems outs back
-    return $ GameState back (initPlayer outs) items World
+    return $ GameState back (initPlayer outs) items World mempty
+
+
+insertItems :: ItemManager -> IO (CollisionMap Unique, M.Map Unique BoardObject)
+insertItems im = undefined
+    
+    where
+        items = gameItems im
+
+insertItem :: Item -> (CollisionMap Unique, M.Map Unique BoardObject) -> IO (CollisionMap Unique, M.Map Unique BoardObject)
+insertItem item (cm, m) = do
+    un <- newUnique
+    let m' = M.insert un item m
+        cm' = insert
+    undefined
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -102,7 +118,7 @@ collisionCheck gs =
         Nothing -> gs
         Just item ->
             let items' = M.delete playerPos items
-                player' = player { playerItems = (M.insertWith update (itemType item) 1 (playerItems player)) }
+                player' = player { playerItems = (M.insertWith (+) (itemType item) 1 (playerItems player)) }
             in gs { gameStatePlayer = player', gameStateItemManager = (ItemManager items') }
     where
         items = gameItems $ gameStateItemManager gs
@@ -111,7 +127,6 @@ collisionCheck gs =
         playerWdith = textureWidth playerT
         playerHeight = textureHeight playerT
         playerPos = playerPosition $ player
-        update old new = old + new
 
 
 updatePlayer :: Background -> Player -> Direction -> Player

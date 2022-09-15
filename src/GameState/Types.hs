@@ -7,17 +7,21 @@ module GameState.Types
     , Item(..)
     , ItemType(..)
     , Background(..)
+    , BoardObject(..)
     ) where
 
 import Control.Monad
 import Control.Monad.IO.Class
 import qualified Data.Map.Strict as M
+import Data.Unique
 
 import Configs
 import InputState
 import OutputHandles.Types
+import GameState.Collision
 
 import Utils
+
 
 
 
@@ -26,10 +30,19 @@ data GameState = GameState
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
     , gameStateMode :: GameMode
+    , collisionMap :: CollisionMap Unique
+    , collisionObjects :: M.Map Unique BoardObject
     }
 
 
-data GameMode = Menu | Inventory | World deriving (Show, Eq)
+data BoardObject =
+      BoardItem Item
+    | BoardPlayer Player
+
+data GameMode =
+      Menu
+    | Inventory
+    | World deriving (Show, Eq)
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState

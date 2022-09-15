@@ -19,6 +19,7 @@ extra-source-files:
     README.md
     ChangeLog.md
     data/configs/game.json
+    assets/lavender.png
     assets/main_character.png
     assets/main_character_sheet.png
     assets/mushroom.png
@@ -28,6 +29,7 @@ data-files:
     assets/outside.png
     assets/main_character_sheet.png
     assets/mushroom.png
+    assets/lavender.png
 
 source-repository head
   type: git
@@ -40,6 +42,7 @@ library
       Env.Types
       Game
       GameState
+      GameState.Collision
       GameState.Draw
       GameState.Types
       InputState

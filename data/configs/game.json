@@ -21,6 +21,11 @@
             "sizeX": 8,
             "sizeY": 8,
             "file": "assets/mushroom.png"
+        },
+        "lavender": {
+            "sizeX": 16,
+            "sizeY": 16,
+            "file": "assets/lavender.png"
         }
     }
 }

@@ -15,7 +15,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 
-type Draws = M.Map (CInt, CInt, Int) Draw
+type Draws = M.Map (CInt, Int, CInt) Draw
 
 data Colour = White | Black | Red | Blue | Green | Yellow
 

@@ -22,7 +22,7 @@ import InputState
 
 
 drawBackground :: Draws -> Configs -> GameState -> Draws
-drawBackground draws cfgs gs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) draws
+drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 w h (Just mask)) draws
     where
         back = background gs
         backArea = area back
@@ -39,7 +39,7 @@ drawBackground draws cfgs gs = M.insert (0, 0, -1) (Draw t 0 0 w h (Just mask)) 
 
 
 drawPlayer :: Draws -> GameState -> Draws
-drawPlayer draws gs = M.insert (bottom, xPos, 0) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer draws gs = M.insert (bottom, 0, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -89,7 +89,7 @@ drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draw
 drawItem :: Int -> Int -> Int -> Int -> Draws -> ((Int, Int), Item) -> Draws
 drawItem xStart yStart width height d ((xPos, yPos), (Item tE _))
     | yPos < yStart || xPos < xStart || yPos > yStart + height || xPos > xStart + width = d
-    | otherwise = M.insert (bottom, xPos', 1) (Draw t xPos' yPos' w h Nothing) d
+    | otherwise = M.insert (bottom, 1, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         w = fromIntegral $ textureWidth tE
