@@ -57,7 +57,7 @@ initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
     let back = initBackground outs
     items <- initItems outs back
-    return $ GameState back (initPlayer outs) items World mempty
+    return $ GameState back (initPlayer outs) items World mempty mempty
 
 
 insertItems :: ItemManager -> IO (CollisionMap Unique, M.Map Unique BoardObject)
@@ -66,11 +66,11 @@ insertItems im = undefined
     where
         items = gameItems im
 
-insertItem :: Item -> (CollisionMap Unique, M.Map Unique BoardObject) -> IO (CollisionMap Unique, M.Map Unique BoardObject)
+insertItem :: BoardObject -> (CollisionMap Unique, M.Map Unique BoardObject) -> IO (CollisionMap Unique, M.Map Unique BoardObject)
 insertItem item (cm, m) = do
     un <- newUnique
     let m' = M.insert un item m
-        cm' = insert
+        cm' = insert 
     undefined
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
