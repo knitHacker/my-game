@@ -75,14 +75,20 @@ getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
 drawItems :: Draws -> Configs -> GameState -> Draws
-drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
+drawItems draws cfgs gs = foldl (drawItem xOff' yOff' boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
         backArea = area back
+        backW = textureWidth backArea
+        backH = textureHeight backArea
         xOff = xOffset back
         yOff = yOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
+        scaleW = (fromIntegral backW) / (fromIntegral boardWidth)
+        scaleH = (fromIntegral backH) / (fromIntegral boardHeight)
+        xOff' = floor $ (fromIntegral xOff) * scaleW
+        yOff' = floor $ (fromIntegral yOff) * scaleH
 
 drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
