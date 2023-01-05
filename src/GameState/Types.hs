@@ -3,11 +3,14 @@ module GameState.Types
     , GameStateRead(..)
     , GameMode(..)
     , Player(..)
-    , ItemManager(..)
+    , ItemManager
     , Item(..)
     , ItemType(..)
+    , ItemState(..)
     , Background(..)
     , BoardObject(..)
+    , ObjectMap
+    , getItemDimensions
     ) where
 
 import Control.Monad
@@ -22,21 +25,21 @@ import GameState.Collision
 
 import Utils
 
-
+type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState = GameState
     { background :: Background
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
-    , gameStateMode :: GameMode
+    , collisionObjects :: ObjectMap
     , collisionMap :: CollisionMap Unique
-    , collisionObjects :: M.Map Unique BoardObject
+    , gameStateMode :: GameMode
     }
 
 
 data BoardObject =
-      BoardItem Item
+      BoardItem
     | BoardPlayer Player
 
 data GameMode =
@@ -56,18 +59,28 @@ data Player = Player
     }
 
 
-data ItemManager = ItemManager
-    { gameItems :: M.Map (Int, Int) Item
-    }
-
-
 data ItemType = Mushroom deriving (Show, Eq, Ord)
 
+getItemDimensions :: ItemState -> (Int, Int, Int, Int)
+getItemDimensions (ItemState item pos) =
+    case pos of
+        Just (x, y) -> (x, y, textureWidth t, textureHeight t)
+        Nothing -> (0, 0, textureWidth t, textureHeight t)
+    where
+        t = itemTexture item
 
 data Item = Item
     { itemTexture :: TextureEntry
     , itemType :: ItemType
     }
+
+data ItemState = ItemState
+    { itemInfo :: Item
+    , itemPosition :: Maybe (Int, Int)
+    }
+
+type ItemManager = M.Map Unique ItemState
+
 
 data Background = Background
     { area :: TextureEntry

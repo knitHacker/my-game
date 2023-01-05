@@ -20,6 +20,7 @@ import OutputHandles.Types
 import OutputHandles.Draw
 import InputState
 
+import Debug.Trace
 
 drawBackground :: Draws -> Configs -> GameState -> Draws
 drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 w h (Just mask)) draws
@@ -48,10 +49,10 @@ drawPlayer draws gs = M.insert (bottom, 0, xPos) (Draw t xPos yPos pSizeX pSizeY
         xOff = xOffset $ background gs
         yOff = yOffset $ background gs
         (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
-        xPos = (fromIntegral (xBoard - xOff)) - div pSizeX 2
-        yPos = (fromIntegral (yBoard - yOff)) - div pSizeY 2
+        xPos = fromIntegral (xBoard - xOff)
+        yPos = fromIntegral (yBoard - yOff)
         charRect = getCharacter $ gameStatePlayer gs
-        bottom = (fromIntegral (yBoard - yOff)) + (div pSizeY 2)
+        bottom = fromIntegral (yBoard - yOff) + pSizeY
 
 getCharacter :: Player -> SDL.Rectangle CInt
 getCharacter player = mkRect xPos yPos width height
@@ -74,28 +75,28 @@ getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
 drawItems :: Draws -> Configs -> GameState -> Draws
-drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.toList (gameItems (gameStateItemManager gs)))
+drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
         backArea = area back
-        t = texture backArea
-        w = fromIntegral $ textureWidth backArea
-        h = fromIntegral $ textureHeight backArea
         xOff = xOffset back
         yOff = yOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
 
-drawItem :: Int -> Int -> Int -> Int -> Draws -> ((Int, Int), Item) -> Draws
-drawItem xStart yStart width height d ((xPos, yPos), (Item tE _))
-    | yPos < yStart || xPos < xStart || yPos > yStart + height || xPos > xStart + width = d
+drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
+drawItem _ _ _ _ d (ItemState _ Nothing) = d
+drawItem xStart yStart width height d (ItemState (Item tE _) (Just (xPos, yPos)))
+    | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (bottom, 1, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
-        w = fromIntegral $ textureWidth tE
-        h = fromIntegral $ textureWidth tE
-        xPos' = (fromIntegral (xPos - xStart)) - div w 2
-        yPos' = (fromIntegral (yPos - yStart)) - div h 2
+        tW = textureWidth tE
+        tH = textureHeight tE
+        w = fromIntegral tW
+        h = fromIntegral tH
+        xPos' = fromIntegral (xPos - xStart)
+        yPos' = fromIntegral (yPos - yStart)
         bottom = yPos' + h
 
 

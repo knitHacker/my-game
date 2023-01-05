@@ -3,17 +3,19 @@ module GameState.Collision
     , singleton
     , fromList
     , insertCollision
+    , detectCollision
+    , deleteCollision
     , Interval
     ) where
 
-import qualified Data.Set as S
 import Data.Maybe
+import qualified Data.List as L
 
 
 data CollisionMap a = CollisionMap
     { xMap :: Maybe (SegTree a)
     , yMap :: Maybe (SegTree a)
-    }
+    } deriving (Show)
 
 
 instance Monoid (CollisionMap a) where
@@ -39,6 +41,26 @@ insertCollision (x, y, w, h, v) m = CollisionMap (Just xMap') (Just yMap')
         yInt = (y, y + h)
         xMap' = maybe (segSingleton xInt v) (insert xInt v) (xMap m)
         yMap' = maybe (segSingleton yInt v) (insert yInt v) (yMap m)
+
+detectCollision :: Eq a => (Int, Int, Int, Int) -> CollisionMap a -> [a]
+detectCollision (x, y, w, h) m =
+    case (xMap m, yMap m) of
+        (Nothing, Nothing) -> []
+        (Just xm, Just ym) ->
+            let xOverlap = getOverlap (x, x+w) xm
+                yOverlap = getOverlap (y, y+h) ym
+            in L.intersect xOverlap yOverlap
+        _ -> error "The x map and y map should be the same size"
+
+deleteCollision :: Eq a => (Int, Int, Int, Int, a) -> CollisionMap a -> CollisionMap a
+deleteCollision (x, y, w, h, v) m =
+    case (xMap m, yMap m) of
+        (Nothing, Nothing) -> m
+        (Just xm, Just ym) ->
+            let newX = delete (x, x + w) ((==) v) xm
+                newY = delete (y, y + h) ((==) v) ym
+            in CollisionMap newX newY
+        _ -> error "The x map and y map should be the same size"
 
 type Interval = (Int, Int)
 
