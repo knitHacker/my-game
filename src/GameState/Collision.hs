@@ -11,6 +11,7 @@ module GameState.Collision
 import Data.Maybe
 import qualified Data.List as L
 
+import Debug.Trace
 
 data CollisionMap a = CollisionMap
     { xMap :: Maybe (SegTree a)
@@ -42,7 +43,7 @@ insertCollision (x, y, w, h, v) m = CollisionMap (Just xMap') (Just yMap')
         xMap' = maybe (segSingleton xInt v) (insert xInt v) (xMap m)
         yMap' = maybe (segSingleton yInt v) (insert yInt v) (yMap m)
 
-detectCollision :: Eq a => (Int, Int, Int, Int) -> CollisionMap a -> [a]
+detectCollision :: (Show a , Eq a) => (Int, Int, Int, Int) -> CollisionMap a -> [a]
 detectCollision (x, y, w, h) m =
     case (xMap m, yMap m) of
         (Nothing, Nothing) -> []
@@ -168,7 +169,7 @@ insert i@(lower, upper) value o@(Overlap oi@(ol, ou) lu rl lt rt) =
         RightOverlap -> Overlap (ol, upper) lu (min lower rl) lt (insert i value rt)
 
 
-getOverlap :: Interval -> SegTree a -> [a]
+getOverlap :: Show a => Interval -> SegTree a -> [a]
 getOverlap i (Node ni nv)
     | overlaps i ni = [nv]
     | otherwise = []
@@ -181,7 +182,7 @@ getOverlap i d@(Disjoint di bi lt rt)
         LeftOf -> getOverlap i lt
         RightOf -> getOverlap i rt
         In -> []
-        Over -> getOverlap i lt ++ getOverlap i rt
+        Over ->  getOverlap i lt ++ getOverlap i rt
         LeftOverlap -> getOverlap i lt
         RightOverlap -> getOverlap i rt
     | otherwise = []

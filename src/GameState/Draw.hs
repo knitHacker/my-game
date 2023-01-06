@@ -23,13 +23,11 @@ import InputState
 import Debug.Trace
 
 drawBackground :: Draws -> Configs -> GameState -> Draws
-drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 w h (Just mask)) draws
+drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
     where
         back = background gs
         backArea = area back
         t = texture backArea
-        w = fromIntegral $ textureWidth backArea
-        h = fromIntegral $ textureHeight backArea
         xOff = xOffset back
         yOff = yOffset back
         xStart = fromIntegral xOff
@@ -75,20 +73,13 @@ getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
 drawItems :: Draws -> Configs -> GameState -> Draws
-drawItems draws cfgs gs = foldl (drawItem xOff' yOff' boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
+drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
-        backArea = area back
-        backW = textureWidth backArea
-        backH = textureHeight backArea
         xOff = xOffset back
         yOff = yOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
-        scaleW = (fromIntegral backW) / (fromIntegral boardWidth)
-        scaleH = (fromIntegral backH) / (fromIntegral boardHeight)
-        xOff' = floor $ (fromIntegral xOff) * scaleW
-        yOff' = floor $ (fromIntegral yOff) * scaleH
 
 drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d

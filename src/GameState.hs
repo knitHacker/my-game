@@ -78,8 +78,8 @@ initGameState cfgs outs = do
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
-    xPos <- randomValue 0 (width - iW)
-    yPos <- randomValue 0 (height - iH)
+    xPos <- randomValue 17 (width - iW)
+    yPos <- randomValue 33 (height - iH)
     return (xPos, yPos)
 
 
@@ -93,11 +93,12 @@ updateGameState = do
     cfgs <- readConfigs
     gs <- readGameState
     inputs <- readInputState
-    player' <- case inputStateDirection inputs of
-        Nothing -> return $ stopMoveDirection $ gameStatePlayer gs
-        Just dir -> return $ updatePlayer (background gs) (gameStatePlayer gs) dir
+    (moved, player') <- case inputStateDirection inputs of
+        Nothing -> return (False, stopMoveDirection $ gameStatePlayer gs)
+        Just dir -> return (True, updatePlayer (background gs) (gameStatePlayer gs) dir)
     let background' = updateBackground cfgs (background gs) player'
-    return $ collisionCheck (gs { background = background', gameStatePlayer = player' })
+        gs' = (gs { background = background', gameStatePlayer = player' })
+    return $ if moved then collisionCheck gs' else gs'
 
 
 updateBackground :: Configs -> Background -> Player -> Background
