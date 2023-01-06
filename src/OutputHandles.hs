@@ -99,4 +99,4 @@ cleanupOutputHandles outs = do
 
 
 executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => Draws -> m ()
-executeDraw draws =drawAll draws
+executeDraw draws = drawAll draws

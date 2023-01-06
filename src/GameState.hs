@@ -9,6 +9,7 @@ import Configs
 import InputState
 import GameState.Types
 import OutputHandles.Types
+import GameState.Collision
 
 import qualified Data.Text as T
 import qualified SDL
@@ -19,31 +20,49 @@ import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
+import Data.Unique
 
+import Debug.Trace
+
+instance Show Unique where
+    show = show . hashUnique
 
 -- bad literals in code
 initPlayer :: OutputHandles -> Player
 initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
     where
         textureEntry = textures outs ! "character"
-        startX = div (textureWidth textureEntry) 2
-        startY = div (textureHeight textureEntry) 2
+        startX = 0
+        startY = 0
 
-initItems :: OutputHandles -> Background -> IO ItemManager
+initItems :: OutputHandles -> Background -> IO (ItemManager, ObjectMap, CollisionMap Unique)
 initItems outs back = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
-    return $ ItemManager $ M.fromList $ zip itemPos $ repeat $ Item mushroomEntry Mushroom
+    insertItems (Item mushroomEntry Mushroom) itemPos
     where
         mushroomEntry = textures outs ! "mushroom"
         backT = area back
         boardWidth = textureWidth backT
         boardHeight = textureHeight backT
         boardSize = boardWidth * boardHeight
-        minItems = 10
+        minItems = 25
         maxItems = 50
-        iW = div (textureWidth mushroomEntry) 2
-        iH = div (textureHeight mushroomEntry) 2
+        iW = textureWidth mushroomEntry
+        iH = textureHeight mushroomEntry
+
+insertItems :: Item -> [(Int, Int)] -> IO (ItemManager, ObjectMap, CollisionMap Unique)
+insertItems item positions = foldM (\maps (x, y) -> insertItem item (x, y) maps) (mempty, mempty, mempty) positions
+
+insertItem :: Item -> (Int, Int) -> (ItemManager, ObjectMap, CollisionMap Unique) -> IO (ItemManager, ObjectMap, CollisionMap Unique)
+insertItem item (x, y) (im, m, cm) = do
+    un <- newUnique
+    let m' = M.insert un BoardItem m
+        im' = M.insert un (ItemState item (Just (x, y))) im
+        t = itemTexture item
+        cm' = insertCollision (x,y,textureWidth t,textureHeight t,un) cm
+    return (im', m', cm')
+
 
 
 -- bad literals in code
@@ -54,13 +73,13 @@ initBackground outs = Background ((textures outs) ! "outside") 0 0
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
     let back = initBackground outs
-    items <- initItems outs back
-    return $ GameState back (initPlayer outs) items World
+    (im, m, cm) <- initItems outs back
+    return $ GameState back (initPlayer outs) im m cm World
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
-    xPos <- randomValue iW (width - iW)
-    yPos <- randomValue iH (height - iH)
+    xPos <- randomValue 17 (width - iW)
+    yPos <- randomValue 33 (height - iH)
     return (xPos, yPos)
 
 
@@ -74,11 +93,12 @@ updateGameState = do
     cfgs <- readConfigs
     gs <- readGameState
     inputs <- readInputState
-    player' <- case inputStateDirection inputs of
-        Nothing -> return $ stopMoveDirection $ gameStatePlayer gs
-        Just dir -> return $ updatePlayer (background gs) (gameStatePlayer gs) dir
+    (moved, player') <- case inputStateDirection inputs of
+        Nothing -> return (False, stopMoveDirection $ gameStatePlayer gs)
+        Just dir -> return (True, updatePlayer (background gs) (gameStatePlayer gs) dir)
     let background' = updateBackground cfgs (background gs) player'
-    return $ collisionCheck (gs { background = background', gameStatePlayer = player' })
+        gs' = (gs { background = background', gameStatePlayer = player' })
+    return $ if moved then collisionCheck gs' else gs'
 
 
 updateBackground :: Configs -> Background -> Player -> Background
@@ -98,20 +118,26 @@ updateBackground cfgs back player = back { xOffset = getOffset playerX windowX x
 
 collisionCheck :: GameState -> GameState
 collisionCheck gs =
-    case M.lookup playerPos items of
-        Nothing -> gs
-        Just item ->
-            let items' = M.delete playerPos items
-                player' = player { playerItems = (M.insertWith update (itemType item) 1 (playerItems player)) }
-            in gs { gameStatePlayer = player', gameStateItemManager = (ItemManager items') }
+    case detectCollision (playerX,playerY,playerWidth,playerHeight) cm of
+        [] -> gs
+        collisions ->
+            let (items', cm', player') = foldl updateObject (items, cm, player) collisions
+            in gs { gameStatePlayer = player', gameStateItemManager = items', collisionMap = cm' }
     where
-        items = gameItems $ gameStateItemManager gs
+        cm = collisionMap gs
+        items = gameStateItemManager gs
         player = gameStatePlayer gs
         playerT = playerTexture player
-        playerWdith = textureWidth playerT
+        playerWidth = textureWidth playerT
         playerHeight = textureHeight playerT
-        playerPos = playerPosition $ player
-        update old new = old + new
+        (playerX, playerY) = playerPosition $ player
+        updateObject (items, cm, player) a =
+            let item = items ! a
+                (x, y, w, h) = getItemDimensions item
+                items' = M.adjust (\_ -> item {itemPosition=Nothing}) a items
+                cm' = deleteCollision (x, y, w, h, a) cm
+                player' = player { playerItems = (M.insertWith (+) (itemType (itemInfo item)) 1 (playerItems player)) }
+            in (items', cm', player')
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
@@ -126,13 +152,13 @@ updatePlayer back player dir = player { playerPosition = newPosition back player
 newPosition :: Background -> Player -> Direction -> (Int, Int)
 newPosition back player dir = (x'', y'')
     where
-        charSizeX = div (textureWidth (playerTexture player)) 2
-        charSizeY = div (textureHeight (playerTexture player)) 2
+        charSizeX = textureWidth (playerTexture player)
+        charSizeY = textureHeight (playerTexture player)
         (xMove, yMove) = updatePosition dir
         xMax = (textureWidth $ area back) - charSizeX
         yMax = (textureHeight $ area back) - charSizeY
-        xMin = charSizeX
-        yMin = charSizeY
+        xMin = 0
+        yMin = 0
         (x, y) = playerPosition player
         x' = x + xMove
         y' = y + yMove
