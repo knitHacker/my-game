@@ -38,7 +38,7 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
 
 
 drawPlayer :: Draws -> GameState -> Draws
-drawPlayer draws gs = M.insert (bottom, 0, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
         t = texture textureEntry
@@ -85,7 +85,7 @@ drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
 drawItem xStart yStart width height d (ItemState (Item tE _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
-    | otherwise = M.insert (bottom, 1, xPos') (Draw t xPos' yPos' w h Nothing) d
+    | otherwise = M.insert (bottom, 2, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         tW = textureWidth tE
@@ -97,12 +97,30 @@ drawItem xStart yStart width height d (ItemState (Item tE _) (Just (xPos, yPos))
         bottom = yPos' + h
 
 
+drawBarriers :: Draws -> Configs -> GameState -> Draws
+drawBarriers draws cfgs gs = foldl (drawBarrier xOff yOff) draws (M.elems (backBarriers (background gs)))
+    where
+        back = background gs
+        xOff = xOffset back
+        yOff = yOffset back
+
+drawBarrier :: Int -> Int -> Draws -> ((Int, Int), TextureEntry) -> Draws
+drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
+    where
+        t = texture tE
+        w = fromIntegral $ textureWidth tE
+        h = fromIntegral $ textureHeight tE
+        xPos' = fromIntegral (xPos - xStart)
+        yPos' = fromIntegral (yPos - yStart)
+        bottom = yPos'
+
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m Draws
 updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
     let
         draws = drawBackground mempty cfgs gs
-        draws' = drawPlayer draws gs
-        draws'' =  drawItems draws' cfgs gs
-    return draws''
+        draws' = drawBarriers draws cfgs gs
+        draws'' = drawPlayer draws' gs
+        draws''' =  drawItems draws'' cfgs gs
+    return draws'''

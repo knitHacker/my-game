@@ -11,6 +11,7 @@ module GameState.Types
     , BoardObject(..)
     , ObjectMap
     , getItemDimensions
+    , getDirection
     ) where
 
 import Control.Monad
@@ -40,7 +41,7 @@ data GameState = GameState
 
 data BoardObject =
       BoardItem
-    | BoardPlayer Player
+    | BoardBarrier
 
 data GameMode =
       Menu
@@ -50,6 +51,10 @@ data GameMode =
 class Monad m => GameStateRead m where
     readGameState :: m GameState
 
+
+getDirection :: Player -> Direction
+getDirection (Player _ _ (Left d) _) = d
+getDirection (Player _ _ (Right (d, _, _)) _) = d
 
 data Player = Player
     { playerTexture :: TextureEntry
@@ -74,6 +79,9 @@ data Item = Item
     , itemType :: ItemType
     }
 
+instance Show Item where
+    show = show . itemType
+
 data ItemState = ItemState
     { itemInfo :: Item
     , itemPosition :: Maybe (Int, Int)
@@ -86,4 +94,5 @@ data Background = Background
     { area :: TextureEntry
     , xOffset :: Int
     , yOffset :: Int
+    , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
     }

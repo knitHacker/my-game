@@ -18,6 +18,7 @@ data-files:
 - assets/main_character_sheet.png
 - assets/mushroom.png
 - assets/lavender.png
+- assets/pond.png
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package

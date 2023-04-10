@@ -16,10 +16,17 @@
             "file": "assets/outside.png"
         }
     },
+    "barriers": {
+        "pond": {
+            "sizeX": 80,
+            "sizeY": 80,
+            "file": "assets/pond.png"
+        }
+    },
     "items": {
         "mushroom": {
-            "sizeX": 8,
-            "sizeY": 8,
+            "sizeX": 6,
+            "sizeY": 6,
             "file": "assets/mushroom.png"
         },
         "lavender": {

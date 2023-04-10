@@ -43,7 +43,8 @@ initOutputHandles cfgs = do
     initWindow r
     textures <- loadAreaTextures cfgs r
     itemTextures <- loadItemTextures cfgs r
-    textures' <- loadCharTexture (M.union textures itemTextures) cfgs r
+    barrierTextures <- loadBarrierTextures cfgs r
+    textures' <- loadCharTexture (M.union (M.union textures itemTextures) barrierTextures) cfgs r
     print $ fst <$> M.toList textures'
     return $ OutputHandles window r textures' ratioX ratioY
     where
@@ -73,6 +74,7 @@ loadCharTexture tm cfgs r = do
         Nothing -> return tm
         Just (name, tex) -> return $ M.insert name tex tm
 
+
 loadAreaTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadAreaTextures cfgs r = do
     textures <- mapM (loadTexture r)  areasCfg
@@ -88,6 +90,15 @@ loadItemTextures cfgs r = do
     return $ M.fromList textures'
     where
         itemCfg = M.toList $ items cfgs
+
+
+loadBarrierTextures :: Configs -> SDL.Renderer -> IO TextureMap
+loadBarrierTextures cfgs r = do
+    textures <- mapM (loadTexture r) barrierCfg
+    let textures' = catMaybes textures
+    return $ M.fromList textures'
+    where
+        barrierCfg = M.toList $ barriers cfgs
 
 
 

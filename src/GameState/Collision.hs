@@ -6,6 +6,8 @@ module GameState.Collision
     , detectCollision
     , deleteCollision
     , Interval
+    , getOrder
+    , Order(..)
     ) where
 
 import Data.Maybe

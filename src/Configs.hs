@@ -39,6 +39,7 @@ data Configs = Configs
     , character :: TextureCfg
     , areas :: M.Map T.Text TextureCfg
     , items :: M.Map T.Text TextureCfg
+    , barriers :: M.Map T.Text TextureCfg
     } deriving (Generic, Show, Eq)
 
 
