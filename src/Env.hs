@@ -15,14 +15,15 @@ import InputState
 import GameState
 
 import Control.Monad.Reader     (runReaderT)
+import Control.Monad.State      (evalStateT, modify)
 
 
 initAppEnvData :: Configs -> OutputHandles -> IO AppEnvData
 initAppEnvData cfgs outs = do
     inputs <- initInputState
     game <- initGameState cfgs outs
-    return $ AppEnvData cfgs outs inputs game
+    return $ AppEnvData (AppEnvReadData cfgs outs inputs game) (AppEnvMsgData [])
 
 
 runAppEnv :: AppEnvData -> AppEnv a -> IO a
-runAppEnv appEnvData (AppEnv appEnv) = runReaderT appEnv appEnvData
+runAppEnv (AppEnvData readData msgData) (AppEnv appEnv) = evalStateT (runReaderT appEnv readData) msgData

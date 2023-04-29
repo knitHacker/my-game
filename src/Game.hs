@@ -20,7 +20,8 @@ runGame appEnvData = do
     gameState' <- runAppEnv appEnvData updateGameState
     input <- runAppEnv appEnvData stepGame
     let continue = not $ inputStateQuit input
-        appEnvData' = appEnvData { appEnvDataInputState = input, appEnvDataGameState = gameState' }
+        readData = appEnvReadData appEnvData
+        appEnvData' = appEnvData { appEnvReadData = ( readData { appEnvInputState = input, appEnvGameState = gameState' } ) }
 
 
     if continue
@@ -33,7 +34,6 @@ runGame appEnvData = do
 
 stepGame :: AppEnv InputState
 stepGame = do
-    appEnvData <- ask
     draws <- updateWindow
     executeDraw draws
     updateInput

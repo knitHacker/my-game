@@ -3,7 +3,9 @@
 {-# LANGUAGE DerivingStrategies #-}
 
 module Env.Types
-    ( AppEnvData(..)
+    ( AppEnvReadData(..)
+    , AppEnvMsgData(..)
+    , AppEnvData(..)
     , AppEnv(..)
     ) where
 
@@ -14,40 +16,47 @@ import GameState.Types
 
 import Control.Monad.Reader          (MonadReader, ReaderT, asks)
 import Control.Monad
-import Control.Monad.IO.Class        (MonadIO)
+import Control.Monad.State           (MonadState, StateT, MonadIO, gets, modify)
 
 
-
-
-data AppEnvData = AppEnvData
-    { appEnvDataConfigs :: Configs
-    , appEnvDataOutputHandles :: OutputHandles
-    , appEnvDataInputState :: InputState
-    , appEnvDataGameState :: GameState
+data AppEnvReadData = AppEnvReadData
+    { appEnvConfigs :: Configs
+    , appEnvOutputHandles :: OutputHandles
+    , appEnvInputState :: InputState
+    , appEnvGameState :: GameState
     }
 
+data AppEnvMsgData = AppEnvMsgData
+    { appEnvMsgs :: [String]
+    }
 
-newtype AppEnv a = AppEnv (ReaderT AppEnvData IO a)
+data AppEnvData = AppEnvData
+    { appEnvReadData :: AppEnvReadData
+    , appEnvMsgData :: AppEnvMsgData
+    }
+
+newtype AppEnv a = AppEnv (ReaderT AppEnvReadData (StateT AppEnvMsgData IO) a)
     deriving newtype
         ( Functor
         , Applicative
         , Monad
-        , MonadReader AppEnvData
+        , MonadReader AppEnvReadData
+        , MonadState AppEnvMsgData
         , MonadIO
         )
 
 instance OutputRead AppEnv where
     getOutputs :: AppEnv OutputHandles
-    getOutputs = asks appEnvDataOutputHandles
+    getOutputs = asks appEnvOutputHandles
 
 instance InputRead AppEnv where
     readInputState :: AppEnv InputState
-    readInputState = asks appEnvDataInputState
+    readInputState = asks appEnvInputState
 
 instance ConfigsRead AppEnv where
     readConfigs :: AppEnv Configs
-    readConfigs = asks appEnvDataConfigs
+    readConfigs = asks appEnvConfigs
 
 instance GameStateRead AppEnv where
     readGameState :: AppEnv GameState
-    readGameState = asks appEnvDataGameState
+    readGameState = asks appEnvGameState
