@@ -48,6 +48,7 @@ library
       GameState.Draw
       GameState.Types
       InputState
+      Msg
       OutputHandles
       OutputHandles.Draw
       OutputHandles.Types
@@ -97,7 +98,7 @@ test-suite my-game-test
       Paths_my_game
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       aeson >=2.0.3.0
     , base >=4.7 && <5
