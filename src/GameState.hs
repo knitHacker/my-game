@@ -39,7 +39,8 @@ initItems :: OutputHandles -> Background -> ObjectMap -> CollisionMap Unique -> 
 initItems outs back m cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
-    insertItems m cm (Item mushroomEntry Mushroom) itemPos
+    uniqs <- replicateM numberOfItems newUnique
+    return $ insertItems uniqs m cm (Item mushroomEntry Mushroom) itemPos
     where
         mushroomEntry = textures outs ! "mushroom"
         backT = area back
@@ -51,20 +52,19 @@ initItems outs back m cm = do
         iW = textureWidth mushroomEntry
         iH = textureHeight mushroomEntry
 
-insertItems :: ObjectMap -> CollisionMap Unique -> Item -> [(Int, Int)] -> IO (ItemManager, ObjectMap, CollisionMap Unique)
-insertItems m cm item positions = foldM (\maps (x, y) -> insertItem item (x, y) maps) (mempty, m, cm) positions
+insertItems :: [Unique] -> ObjectMap -> CollisionMap Unique -> Item -> [(Int, Int)] -> (ItemManager, ObjectMap, CollisionMap Unique)
+insertItems uniqs m cm item positions = foldr (uncurry (insertItem item)) (mempty, m, cm) $ zip uniqs positions
 
-insertItem :: Item -> (Int, Int) -> (ItemManager, ObjectMap, CollisionMap Unique) -> IO (ItemManager, ObjectMap, CollisionMap Unique)
-insertItem item (x, y) (im, m, cm) =
+insertItem :: Item -> Unique -> (Int, Int) -> (ItemManager, ObjectMap, CollisionMap Unique) -> (ItemManager, ObjectMap, CollisionMap Unique)
+insertItem item un (x, y) (im, m, cm) =
     case detectCollision (x, y, 1, 1) cm of
-        [] -> do
-            un <- newUnique
+        [] ->
             let m' = M.insert un BoardItem m
                 im' = M.insert un (ItemState item (Just (x, y))) im
                 t = itemTexture item
                 cm' = insertCollision (x,y,textureWidth t,textureHeight t,un) cm
-            return (im', m', cm')
-        _ -> return (im, m, cm)
+            in (im', m', cm')
+        _ -> (im, m, cm)
 
 
 -- bad literals in code
