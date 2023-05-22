@@ -1,7 +1,7 @@
 module GameState.Types
     ( GameState(..)
     , GameStateRead(..)
-    , GameMode(..)
+    , GameArea(..)
     , Player(..)
     , ItemManager
     , Item(..)
@@ -30,12 +30,16 @@ type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState = GameState
+    | MainMenu
+    | GameStateArea GameArea
+
+
+data GameArea = GameArea
     { background :: Background
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
     , collisionObjects :: ObjectMap
     , collisionMap :: CollisionMap Unique
-    , gameStateMode :: GameMode
     }
 
 
@@ -43,10 +47,6 @@ data BoardObject =
       BoardItem
     | BoardBarrier
 
-data GameMode =
-      Menu
-    | Inventory
-    | World deriving (Show, Eq)
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState

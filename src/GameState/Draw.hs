@@ -22,7 +22,7 @@ import InputState
 
 import Debug.Trace
 
-drawBackground :: Draws -> Configs -> GameState -> Draws
+drawBackground :: Draws -> Configs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
     where
         back = background gs
@@ -37,7 +37,7 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
         mask = mkRect xStart yStart boardWidth boardHeight
 
 
-drawPlayer :: Draws -> GameState -> Draws
+drawPlayer :: Draws -> GameArea -> Draws
 drawPlayer draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         textureEntry = playerTexture $ gameStatePlayer gs
@@ -72,7 +72,7 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: Draws -> Configs -> GameState -> Draws
+drawItems :: Draws -> Configs -> GameArea -> Draws
 drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
@@ -97,10 +97,12 @@ drawItem xStart yStart width height d (ItemState (Item tE _) (Just (xPos, yPos))
         bottom = yPos' + h
 
 
-drawBarriers :: Draws -> Configs -> GameState -> Draws
-drawBarriers draws cfgs gs = foldl (drawBarrier xOff yOff) draws (M.elems (backBarriers (background gs)))
+drawBarriers :: Draws -> Configs -> GameArea -> Draws
+drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
+                                     draws
+                                     (M.elems (backBarriers (background area)))
     where
-        back = background gs
+        back = background area
         xOff = xOffset back
         yOff = yOffset back
 
@@ -118,9 +120,15 @@ updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m Draws
 updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
-    let
-        draws = drawBackground mempty cfgs gs
-        draws' = drawBarriers draws cfgs gs
-        draws'' = drawPlayer draws' gs
-        draws''' =  drawItems draws'' cfgs gs
-    return draws'''
+    case gs of
+        MainMenu -> undefined
+        GameStateArea area -> return $ updateAreaWindow cfgs area
+
+
+updateAreaWindow :: Configs -> GameArea -> Draws
+updateAreaWindow cfgs area = draws'''
+    where
+        draws = drawBackground mempty cfgs area
+        draws' = drawBarriers draws cfgs area
+        draws'' = drawPlayer draws' area
+        draws''' =  drawItems draws'' cfgs area

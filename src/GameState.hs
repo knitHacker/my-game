@@ -86,7 +86,7 @@ initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
     (back, m, cm) <- initBackground outs
     (im, m', cm') <- initItems outs back m cm
-    return $ GameState back (initPlayer outs) im m' cm' World
+    return $ GameStateArea $ GameArea back (initPlayer outs) im m' cm'
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -103,15 +103,21 @@ stopMoveDirection player = case playerMovement player of
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
 updateGameState = do
     cfgs <- readConfigs
-    gs <- readGameState
     inputs <- readInputState
-    (moved, player') <- case inputStateDirection inputs of
-        Nothing -> return (False, stopMoveDirection $ gameStatePlayer gs)
-        Just dir -> return (True, updatePlayer (background gs) (gameStatePlayer gs) dir)
-    let gs' = (gs { gameStatePlayer = player' })
-        gs'' = if moved then collisionCheck gs player' else gs'
-        background' = updateBackground cfgs (background gs'') player'
-    return $ gs'' { background = background' }
+    gs <- readGameState
+    case gs of
+        MainMenu -> undefined
+        GameStateArea area -> return $ updateGameStateInArea cfgs inputs area
+
+updateGameStateInArea :: Configs -> InputState -> GameArea -> GameState
+updateGameStateInArea cfgs inputs area = GameStateArea $ area'' { background = background' }
+    where
+        (moved, player') = case inputStateDirection inputs of
+            Nothing -> (False, stopMoveDirection $ gameStatePlayer area)
+            Just dir -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
+        area' = (area { gameStatePlayer = player' })
+        area'' = if moved then collisionCheck area player' else area'
+        background' = updateBackground cfgs (background area'') player'
 
 
 updateBackground :: Configs -> Background -> Player -> Background
@@ -129,7 +135,7 @@ updateBackground cfgs back player = back { xOffset = getOffset playerX windowX x
             | player > areaMax - (div window 2) = areaMax - window
             | otherwise = player - (div window 2)
 
-collisionCheck :: GameState -> Player -> GameState
+collisionCheck :: GameArea -> Player -> GameArea
 collisionCheck gs player =
     case detectCollision (playerX, collideYStart, playerWidth, collideHeight) cm of
         [] -> gs { gameStatePlayer = player }
