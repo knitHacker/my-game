@@ -11,6 +11,7 @@ import qualified SDL
 import qualified SDL.Image
 import SDL.Vect
 import SDL                    (($=))
+import qualified SDL.Font as Font
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
@@ -36,17 +37,19 @@ rendererConfig = SDL.RendererConfig
 initOutputHandles :: Configs -> IO OutputHandles
 initOutputHandles cfgs = do
     SDL.initialize []
+    Font.initialize
     window <- SDL.createWindow "My Game" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
     SDL.showWindow window
     r <- SDL.createRenderer window (-1) rendererConfig
     -- clears the screen
     initWindow r
+    font <- Font.load "assets/fonts/InsightSansSSi.ttf" 12
     textures <- loadAreaTextures cfgs r
     itemTextures <- loadItemTextures cfgs r
     barrierTextures <- loadBarrierTextures cfgs r
     textures' <- loadCharTexture (M.union (M.union textures itemTextures) barrierTextures) cfgs r
     print $ fst <$> M.toList textures'
-    return $ OutputHandles window r textures' ratioX ratioY
+    return $ OutputHandles window r textures' font ratioX ratioY
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
         screenHeight = fromIntegral $ windowSizeY cfgs
@@ -104,10 +107,12 @@ loadBarrierTextures cfgs r = do
 
 cleanupOutputHandles :: OutputHandles -> IO ()
 cleanupOutputHandles outs = do
+    Font.free $ font outs
+    Font.quit
     SDL.destroyRenderer $ renderer outs
     SDL.destroyWindow $ window outs
     SDL.quit
 
 
-executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => Draws -> m ()
+executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => ToRender -> m ()
 executeDraw draws = drawAll draws

@@ -7,32 +7,32 @@
     "character": {
         "sizeX": 16,
         "sizeY": 32,
-        "file": "assets/main_character_sheet.png"
+        "file": "assets/images/main_character_sheet.png"
     },
     "areas": {
         "outside": {
             "sizeX": 400,
             "sizeY": 300,
-            "file": "assets/outside.png"
+            "file": "assets/images/outside.png"
         }
     },
     "barriers": {
         "pond": {
             "sizeX": 80,
             "sizeY": 80,
-            "file": "assets/pond.png"
+            "file": "assets/images/pond.png"
         }
     },
     "items": {
         "mushroom": {
             "sizeX": 6,
             "sizeY": 6,
-            "file": "assets/mushroom.png"
+            "file": "assets/images/mushroom.png"
         },
         "lavender": {
             "sizeX": 16,
             "sizeY": 16,
-            "file": "assets/lavender.png"
+            "file": "assets/images/lavender.png"
         }
     }
 }

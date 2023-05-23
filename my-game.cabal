@@ -19,19 +19,19 @@ extra-source-files:
     README.md
     ChangeLog.md
     data/configs/game.json
-    assets/lavender.png
-    assets/main_character.png
-    assets/main_character_sheet.png
-    assets/mushroom.png
-    assets/outside.png
-    assets/pond.png
+    assets/images/lavender.png
+    assets/images/main_character.png
+    assets/images/main_character_sheet.png
+    assets/images/mushroom.png
+    assets/images/outside.png
+    assets/images/pond.png
 data-files:
     data/configs/game.json
-    assets/outside.png
-    assets/main_character_sheet.png
-    assets/mushroom.png
-    assets/lavender.png
-    assets/pond.png
+    assets/images/outside.png
+    assets/images/main_character_sheet.png
+    assets/images/mushroom.png
+    assets/images/lavender.png
+    assets/images/pond.png
 
 source-repository head
   type: git
@@ -65,6 +65,7 @@ library
     , random >=1.2.1
     , sdl2 >=2.0.6
     , sdl2-image >=2.1.0.0
+    , sdl2-ttf
     , text
     , transformers >=0.5.6.2
   default-language: Haskell2010
@@ -86,6 +87,7 @@ executable my-game-exe
     , random >=1.2.1
     , sdl2 >=2.0.6
     , sdl2-image >=2.1.0.0
+    , sdl2-ttf
     , text
     , transformers >=0.5.6.2
   default-language: Haskell2010
@@ -108,6 +110,7 @@ test-suite my-game-test
     , random >=1.2.1
     , sdl2 >=2.0.6
     , sdl2-image >=2.1.0.0
+    , sdl2-ttf
     , text
     , transformers >=0.5.6.2
   default-language: Haskell2010

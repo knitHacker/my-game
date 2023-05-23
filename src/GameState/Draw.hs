@@ -116,7 +116,7 @@ drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (bottom, 0, xPos') (Dr
         yPos' = fromIntegral (yPos - yStart)
         bottom = yPos'
 
-updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m Draws
+updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m ToRender
 updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
@@ -125,8 +125,8 @@ updateWindow = do
         GameStateArea area -> return $ updateAreaWindow cfgs area
 
 
-updateAreaWindow :: Configs -> GameArea -> Draws
-updateAreaWindow cfgs area = draws'''
+updateAreaWindow :: Configs -> GameArea -> ToRender
+updateAreaWindow cfgs area = ToRender draws''' []
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
