@@ -2,6 +2,7 @@ module GameState.Types
     ( GameState(..)
     , GameStateRead(..)
     , GameArea(..)
+    , Menu(..)
     , Player(..)
     , ItemManager
     , Item(..)

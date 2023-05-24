@@ -44,8 +44,10 @@ library
       Env.Types
       Game
       GameState
+      GameState.Areas.Outside
       GameState.Collision
       GameState.Draw
+      GameState.Menu.MainMenu
       GameState.Types
       InputState
       OutputHandles
