@@ -30,9 +30,16 @@ type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState = GameState
-    | MainMenu
+    | MainMenu Menu
     | GameStateArea GameArea
 
+
+data Menu = Menu
+    { texts :: M.Map Int TextDisplay
+    , cursor :: Maybe MenuCursor
+    }
+
+data MenuCursor = MenuCursor
 
 data GameArea = GameArea
     { background :: Background

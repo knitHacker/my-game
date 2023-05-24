@@ -77,7 +77,7 @@ drawAll drawings = do
     mapM_ (drawText r (font outs)) words'
     SDL.present r
 
-drawText :: MonadIO m => SDL.Renderer -> Font.Font -> DrawWords -> m ()
+drawText :: MonadIO m => SDL.Renderer -> Font.Font -> TextDisplay -> m ()
 drawText r font wd = do
     surf <- Font.solid font (color (wordsColor wd)) (wordsText wd)
     text <- SDL.createTextureFromSurface r surf
@@ -97,8 +97,8 @@ scaleDraw rX rY (Draw t pX pY w h m) = Draw t (scale pX rX) (scale pY rY) (scale
         scale o r = floor ((fromIntegral o) * r)
 
 
-scaleWords :: Double -> Double -> DrawWords -> DrawWords
-scaleWords rX rY (DrawWords wd pX pY w h c) = DrawWords wd (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) c
+scaleWords :: Double -> Double -> TextDisplay -> TextDisplay
+scaleWords rX rY (TextDisplay wd pX pY w h c) = TextDisplay wd (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) c
     where
         scale o r = floor ((fromIntegral o) * r)
 

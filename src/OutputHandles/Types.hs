@@ -7,7 +7,7 @@ module OutputHandles.Types
     , TextureEntry(..)
     , Draws
     , ToRender(..)
-    , DrawWords(..)
+    , TextDisplay(..)
     ) where
 
 import Foreign.C.Types
@@ -22,7 +22,7 @@ type Draws = M.Map (CInt, Int, CInt) Draw
 
 data ToRender = ToRender
     { draws :: Draws
-    , drawWords :: [DrawWords]
+    , drawWords :: [TextDisplay]
     }
 
 data Color = White | Black | Red | Blue | Green | Yellow
@@ -37,7 +37,7 @@ data Draw = Draw
     }
 
 
-data DrawWords = DrawWords
+data TextDisplay = TextDisplay
     { wordsText :: T.Text
     , wordsPosX :: CInt
     , wordsPosY :: CInt
