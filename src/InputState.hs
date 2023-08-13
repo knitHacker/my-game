@@ -21,11 +21,12 @@ data Direction
 data InputState = InputState
     { inputStateQuit :: Bool
     , inputStateDirection :: Maybe Direction
+    , inputStateEnter :: Bool
     } deriving (Show, Eq)
 
 
 initInputState :: IO InputState
-initInputState = return $ InputState False Nothing
+initInputState = return $ InputState False Nothing False
 
 
 class Monad m => InputRead m where
@@ -46,18 +47,22 @@ newInput (SDL.Event _t p) = payloadToIntent p
 
 
 payloadToIntent :: SDL.EventPayload -> InputState
-payloadToIntent SDL.QuitEvent         = InputState True Nothing
-payloadToIntent (SDL.KeyboardEvent k) = InputState False $ getKey k
-payloadToIntent _                     = InputState False Nothing
+payloadToIntent SDL.QuitEvent         = InputState True Nothing False
+payloadToIntent (SDL.KeyboardEvent k) =
+    case getKey k of
+        Left isEnter -> InputState False Nothing isEnter
+        Right d -> InputState False (Just d) False
+payloadToIntent _                     = InputState False Nothing False
 
 
-getKey :: SDL.KeyboardEventData -> Maybe Direction
-getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Nothing
+getKey :: SDL.KeyboardEventData -> Either Bool Direction
+getKey (SDL.KeyboardEventData _ SDL.Released _ _) = Left False
 getKey (SDL.KeyboardEventData _ SDL.Pressed _ keysym) =
   case SDL.keysymKeycode keysym of
-    SDL.KeycodeUp     -> Just DUp
-    SDL.KeycodeDown   -> Just DDown
-    SDL.KeycodeLeft   -> Just DLeft
-    SDL.KeycodeRight  -> Just DRight
-    _                 -> Nothing
+    SDL.KeycodeUp     -> Right DUp
+    SDL.KeycodeDown   -> Right DDown
+    SDL.KeycodeLeft   -> Right DLeft
+    SDL.KeycodeRight  -> Right DRight
+    SDL.KeycodeReturn -> Left True
+    _                 -> Left False
 

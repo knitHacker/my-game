@@ -41,14 +41,24 @@ stopMoveDirection player = case playerMovement player of
     Left d -> player
     Right (d, _, _) -> player { playerMovement = Left d }
 
-updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
+updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m, OutputRead m) => m GameState
 updateGameState = do
     cfgs <- readConfigs
     inputs <- readInputState
     gs <- readGameState
+    outs <- getOutputs
     case gs of
-        MainMenu _ -> return gs
+        MainMenu _ -> liftIO $ updateGameStateInMenu cfgs inputs gs outs
         GameStateArea area -> return $ updateGameStateInArea cfgs inputs area
+
+updateGameStateInMenu :: Configs -> InputState -> GameState -> OutputHandles -> IO GameState
+updateGameStateInMenu cfgs inputs oldGS outs =
+    if inputStateEnter inputs
+        then do
+            area <- initOutsideArea cfgs outs
+            return $ GameStateArea area
+        else return oldGS
+
 
 updateGameStateInArea :: Configs -> InputState -> GameArea -> GameState
 updateGameStateInArea cfgs inputs area = GameStateArea $ area'' { background = background' }
