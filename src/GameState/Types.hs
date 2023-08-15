@@ -3,6 +3,7 @@ module GameState.Types
     , GameStateRead(..)
     , GameArea(..)
     , Menu(..)
+    , MenuState(..)
     , Player(..)
     , ItemManager
     , Item(..)
@@ -31,13 +32,17 @@ type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState = GameState
-    | MainMenu Menu
+    | GameMenu Menu
     | GameStateArea GameArea
 
+
+data MenuState = MainMenu
+    | PauseMenu GameArea
 
 data Menu = Menu
     { texts :: M.Map Int TextDisplay
     , cursor :: Maybe MenuCursor
+    , menuState :: MenuState
     }
 
 data MenuCursor = MenuCursor

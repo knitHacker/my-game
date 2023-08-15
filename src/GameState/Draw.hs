@@ -121,7 +121,7 @@ updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
     case gs of
-        MainMenu m -> return $ updateMainMenu m
+        GameMenu m -> return $ updateGameMenu m
         GameStateArea area -> return $ updateAreaWindow cfgs area
 
 
@@ -134,5 +134,5 @@ updateAreaWindow cfgs area = ToRender draws''' []
         draws''' =  drawItems draws'' cfgs area
 
 
-updateMainMenu :: Menu -> ToRender
-updateMainMenu (Menu words _) = ToRender M.empty $ M.elems words
+updateGameMenu :: Menu -> ToRender
+updateGameMenu (Menu words _ _) = ToRender M.empty $ M.elems words

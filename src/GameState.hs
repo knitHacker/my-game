@@ -10,6 +10,7 @@ import InputState
 import GameState.Types
 import GameState.Areas.Outside
 import GameState.Menu.MainMenu
+import GameState.Menu.PauseMenu
 import OutputHandles.Types
 import GameState.Collision
 
@@ -27,7 +28,7 @@ import Data.Unique
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
 --    area <- initOutsideArea cfgs outs
-    return $ MainMenu initMainMenu
+    return $ GameMenu initMainMenu
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -48,19 +49,22 @@ updateGameState = do
     gs <- readGameState
     outs <- getOutputs
     case gs of
-        MainMenu _ -> liftIO $ updateGameStateInMenu cfgs inputs gs outs
+        GameMenu m -> liftIO $ updateGameStateInMenu m cfgs inputs gs outs
         GameStateArea area -> return $ updateGameStateInArea cfgs inputs area
 
-updateGameStateInMenu :: Configs -> InputState -> GameState -> OutputHandles -> IO GameState
-updateGameStateInMenu cfgs inputs oldGS outs =
+updateGameStateInMenu :: Menu -> Configs -> InputState -> GameState -> OutputHandles -> IO GameState
+updateGameStateInMenu m cfgs inputs oldGS outs =
     if inputStateEnter inputs
-        then do
-            area <- initOutsideArea cfgs outs
-            return $ GameStateArea area
+        then case menuState m of
+            MainMenu -> do
+                area <- initOutsideArea cfgs outs
+                return $ GameStateArea area
+            PauseMenu a -> return $ GameStateArea a
         else return oldGS
 
 
 updateGameStateInArea :: Configs -> InputState -> GameArea -> GameState
+updateGameStateInArea _ (InputState _ _ _ True) area = GameMenu (initPauseMenu area)
 updateGameStateInArea cfgs inputs area = GameStateArea $ area'' { background = background' }
     where
         (moved, player') = case inputStateDirection inputs of
