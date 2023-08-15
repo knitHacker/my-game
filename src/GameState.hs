@@ -8,6 +8,9 @@ import Control.Monad
 import Configs
 import InputState
 import GameState.Types
+import GameState.Areas.Outside
+import GameState.Menu.MainMenu
+import GameState.Menu.PauseMenu
 import OutputHandles.Types
 import GameState.Collision
 
@@ -22,71 +25,10 @@ import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 import Data.Unique
 
-import Debug.Trace
-
-instance Show Unique where
-    show = show . hashUnique
-
--- bad literals in code
-initPlayer :: OutputHandles -> Player
-initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
-    where
-        textureEntry = textures outs ! "character"
-        startX = 0
-        startY = 0
-
-initItems :: OutputHandles -> Background -> ObjectMap -> CollisionMap Unique -> IO (ItemManager, ObjectMap, CollisionMap Unique)
-initItems outs back m cm = do
-    numberOfItems <- randomValue minItems maxItems
-    itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
-    uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs m cm (Item mushroomEntry Mushroom) itemPos
-    where
-        mushroomEntry = textures outs ! "mushroom"
-        backT = area back
-        boardWidth = textureWidth backT
-        boardHeight = textureHeight backT
-        boardSize = boardWidth * boardHeight
-        minItems = 25
-        maxItems = 50
-        iW = textureWidth mushroomEntry
-        iH = textureHeight mushroomEntry
-
-insertItems :: [Unique] -> ObjectMap -> CollisionMap Unique -> Item -> [(Int, Int)] -> (ItemManager, ObjectMap, CollisionMap Unique)
-insertItems uniqs m cm item positions = foldr (uncurry (insertItem item)) (mempty, m, cm) $ zip uniqs positions
-
-insertItem :: Item -> Unique -> (Int, Int) -> (ItemManager, ObjectMap, CollisionMap Unique) -> (ItemManager, ObjectMap, CollisionMap Unique)
-insertItem item un (x, y) (im, m, cm) =
-    case detectCollision (x, y, 1, 1) cm of
-        [] ->
-            let m' = M.insert un BoardItem m
-                im' = M.insert un (ItemState item (Just (x, y))) im
-                t = itemTexture item
-                cm' = insertCollision (x,y,textureWidth t,textureHeight t,un) cm
-            in (im', m', cm')
-        _ -> (im, m, cm)
-
-
--- bad literals in code
-initBackground :: OutputHandles -> IO (Background, ObjectMap, CollisionMap Unique)
-initBackground outs = do
-    un <- newUnique
-    let barrs = M.insert un ((pondX, pondY),  pond) mempty
-        om = M.insert un BoardBarrier mempty
-        cm = insertCollision (pondX, pondY, textureWidth pond, textureHeight pond, un) mempty
-    return (Background ((textures outs) ! "outside") 0 0 barrs, om, cm)
-    where
-        pondX = 150
-        pondY = 100
-        backT = textures outs ! "outside"
-        pond = textures outs ! "pond"
-
-
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
-    (back, m, cm) <- initBackground outs
-    (im, m', cm') <- initItems outs back m cm
-    return $ GameState back (initPlayer outs) im m' cm' World
+--    area <- initOutsideArea cfgs outs
+    return $ GameMenu initMainMenu
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -100,18 +42,37 @@ stopMoveDirection player = case playerMovement player of
     Left d -> player
     Right (d, _, _) -> player { playerMovement = Left d }
 
-updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m) => m GameState
+updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m, OutputRead m) => m GameState
 updateGameState = do
     cfgs <- readConfigs
-    gs <- readGameState
     inputs <- readInputState
-    (moved, player') <- case inputStateDirection inputs of
-        Nothing -> return (False, stopMoveDirection $ gameStatePlayer gs)
-        Just dir -> return (True, updatePlayer (background gs) (gameStatePlayer gs) dir)
-    let gs' = (gs { gameStatePlayer = player' })
-        gs'' = if moved then collisionCheck gs player' else gs'
-        background' = updateBackground cfgs (background gs'') player'
-    return $ gs'' { background = background' }
+    gs <- readGameState
+    outs <- getOutputs
+    case gs of
+        GameMenu m -> liftIO $ updateGameStateInMenu m cfgs inputs gs outs
+        GameStateArea area -> return $ updateGameStateInArea cfgs inputs area
+
+updateGameStateInMenu :: Menu -> Configs -> InputState -> GameState -> OutputHandles -> IO GameState
+updateGameStateInMenu m cfgs inputs oldGS outs =
+    if inputStateEnter inputs
+        then case menuState m of
+            MainMenu -> do
+                area <- initOutsideArea cfgs outs
+                return $ GameStateArea area
+            PauseMenu a -> return $ GameStateArea a
+        else return oldGS
+
+
+updateGameStateInArea :: Configs -> InputState -> GameArea -> GameState
+updateGameStateInArea _ (InputState _ _ _ True) area = GameMenu (initPauseMenu area)
+updateGameStateInArea cfgs inputs area = GameStateArea $ area'' { background = background' }
+    where
+        (moved, player') = case inputStateDirection inputs of
+            Nothing -> (False, stopMoveDirection $ gameStatePlayer area)
+            Just dir -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
+        area' = (area { gameStatePlayer = player' })
+        area'' = if moved then collisionCheck area player' else area'
+        background' = updateBackground cfgs (background area'') player'
 
 
 updateBackground :: Configs -> Background -> Player -> Background
@@ -129,7 +90,7 @@ updateBackground cfgs back player = back { xOffset = getOffset playerX windowX x
             | player > areaMax - (div window 2) = areaMax - window
             | otherwise = player - (div window 2)
 
-collisionCheck :: GameState -> Player -> GameState
+collisionCheck :: GameArea -> Player -> GameArea
 collisionCheck gs player =
     case detectCollision (playerX, collideYStart, playerWidth, collideHeight) cm of
         [] -> gs { gameStatePlayer = player }

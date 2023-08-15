@@ -14,6 +14,7 @@ import Foreign.C.Types
 import qualified SDL
 import SDL.Vect
 import SDL                    (($=))
+import qualified SDL.Font as Font
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
@@ -41,13 +42,19 @@ drawLine :: (MonadIO m) => SDL.Renderer -> (CInt, CInt) -> (CInt, CInt) -> m ()
 drawLine r (ox, oy) (tx, ty) =
   SDL.drawLine r (mkPoint ox oy) (mkPoint tx ty)
 
-setColor :: (MonadIO m) => SDL.Renderer -> Colour -> m ()
-setColor r White  = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound maxBound maxBound
-setColor r Black  = SDL.rendererDrawColor r $= SDL.V4 0 0 0 0
-setColor r Red    = SDL.rendererDrawColor r $= SDL.V4 maxBound 0 0 maxBound
-setColor r Green  = SDL.rendererDrawColor r $= SDL.V4 0 maxBound 0 maxBound
-setColor r Blue   = SDL.rendererDrawColor r $= SDL.V4 0 0 maxBound maxBound
-setColor r Yellow = SDL.rendererDrawColor r $= SDL.V4 maxBound maxBound 0 maxBound
+color :: Color -> Font.Color
+color White  = SDL.V4 maxBound maxBound maxBound maxBound
+color Black  = SDL.V4 0 0 0 0
+color Red    = SDL.V4 maxBound 0 0 maxBound
+color Green  = SDL.V4 0 maxBound 0 maxBound
+color Blue   = SDL.V4 0 0 maxBound maxBound
+color Yellow = SDL.V4 maxBound maxBound 0 maxBound
+
+
+
+
+setColor :: (MonadIO m) => SDL.Renderer -> Color -> m ()
+setColor r c = SDL.rendererDrawColor r $= color c
 
 
 initWindow :: (MonadIO m) => SDL.Renderer -> m ()
@@ -57,19 +64,27 @@ initWindow r = do
     SDL.present r
 
 
-drawAll :: (MonadIO m, OutputRead m) => Draws -> m ()
+drawAll :: (MonadIO m, OutputRead m) => ToRender -> m ()
 drawAll drawings = do
     outs <- getOutputs
     let r = renderer outs
         ratX = ratioX outs
         ratY = ratioY outs
-        drawings' = scaleDraw ratX ratY <$> drawings
-    setColor r White
+        drawings' = scaleDraw ratX ratY <$> draws drawings
+        words' = scaleWords ratX ratY <$> drawWords drawings
     SDL.clear r
     mapM_ (draw r) drawings'
+    mapM_ (drawText r (font outs)) words'
     SDL.present r
 
-draw :: (MonadIO m) => SDL.Renderer -> Draw -> m ()
+drawText :: MonadIO m => SDL.Renderer -> Font.Font -> TextDisplay -> m ()
+drawText r font wd = do
+    surf <- Font.solid font (color (wordsColor wd)) (wordsText wd)
+    text <- SDL.createTextureFromSurface r surf
+    SDL.copy r text Nothing (Just (mkRect (wordsPosX wd) (wordsPosY wd) (wordsWidth wd) (wordsHeight wd)))
+    SDL.freeSurface surf
+
+draw :: MonadIO m => SDL.Renderer -> Draw -> m ()
 draw r d = do
     SDL.copy r (drawTexture d) (drawMask d) (Just pos)
     where
@@ -80,3 +95,11 @@ scaleDraw :: Double -> Double -> Draw -> Draw
 scaleDraw rX rY (Draw t pX pY w h m) = Draw t (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) m
     where
         scale o r = floor ((fromIntegral o) * r)
+
+
+scaleWords :: Double -> Double -> TextDisplay -> TextDisplay
+scaleWords rX rY (TextDisplay wd pX pY w h c) = TextDisplay wd (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) c
+    where
+        scale o r = floor ((fromIntegral o) * r)
+
+

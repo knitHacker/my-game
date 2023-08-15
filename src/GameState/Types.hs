@@ -1,7 +1,9 @@
 module GameState.Types
     ( GameState(..)
     , GameStateRead(..)
-    , GameMode(..)
+    , GameArea(..)
+    , Menu(..)
+    , MenuState(..)
     , Player(..)
     , ItemManager
     , Item(..)
@@ -30,12 +32,27 @@ type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState = GameState
+    | GameMenu Menu
+    | GameStateArea GameArea
+
+
+data MenuState = MainMenu
+    | PauseMenu GameArea
+
+data Menu = Menu
+    { texts :: M.Map Int TextDisplay
+    , cursor :: Maybe MenuCursor
+    , menuState :: MenuState
+    }
+
+data MenuCursor = MenuCursor
+
+data GameArea = GameArea
     { background :: Background
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
     , collisionObjects :: ObjectMap
     , collisionMap :: CollisionMap Unique
-    , gameStateMode :: GameMode
     }
 
 
@@ -43,10 +60,6 @@ data BoardObject =
       BoardItem
     | BoardBarrier
 
-data GameMode =
-      Menu
-    | Inventory
-    | World deriving (Show, Eq)
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState

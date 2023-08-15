@@ -3,13 +3,16 @@ module OutputHandles.Types
     ( OutputHandles(..)
     , OutputRead(..)
     , Draw(..)
-    , Colour(..)
+    , Color(..)
     , TextureEntry(..)
     , Draws
+    , ToRender(..)
+    , TextDisplay(..)
     ) where
 
 import Foreign.C.Types
 import qualified SDL
+import qualified SDL.Font as Font
 import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
@@ -17,7 +20,12 @@ import qualified Data.Text as T
 
 type Draws = M.Map (CInt, Int, CInt) Draw
 
-data Colour = White | Black | Red | Blue | Green | Yellow
+data ToRender = ToRender
+    { draws :: Draws
+    , drawWords :: [TextDisplay]
+    }
+
+data Color = White | Black | Red | Blue | Green | Yellow
 
 data Draw = Draw
     { drawTexture :: SDL.Texture
@@ -27,6 +35,17 @@ data Draw = Draw
     , drawHeight :: CInt
     , drawMask :: Maybe (SDL.Rectangle CInt)
     }
+
+
+data TextDisplay = TextDisplay
+    { wordsText :: T.Text
+    , wordsPosX :: CInt
+    , wordsPosY :: CInt
+    , wordsWidth :: CInt
+    , wordsHeight :: CInt
+    , wordsColor :: Color
+    }
+
 
 data TextureEntry = TextureEntry
     { textureWidth :: Int
@@ -39,6 +58,7 @@ data OutputHandles = OutputHandles
     { window :: SDL.Window
     , renderer :: SDL.Renderer
     , textures :: M.Map T.Text TextureEntry
+    , font :: Font.Font
     , ratioX :: Double
     , ratioY :: Double
     }
