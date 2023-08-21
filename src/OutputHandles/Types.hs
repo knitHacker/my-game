@@ -25,6 +25,12 @@ data ToRender = ToRender
     , drawWords :: [TextDisplay]
     }
 
+instance Monoid ToRender where
+    mempty = ToRender M.empty []
+
+instance Semigroup ToRender where
+   (<>) (ToRender m1 l1) (ToRender m2 l2) = ToRender (m1 <> m2) (l1 <> l2)
+
 data Color = White | Black | Red | Blue | Green | Yellow
 
 data Draw = Draw

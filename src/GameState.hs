@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module GameState
     ( initGameState
+    , isGameExiting
     , updateGameState
     ) where
 
@@ -28,7 +29,7 @@ import Data.Unique
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
 --    area <- initOutsideArea cfgs outs
-    return $ GameMenu initMainMenu
+    return $ GameMenu $ initMainMenu outs
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -42,6 +43,10 @@ stopMoveDirection player = case playerMovement player of
     Left d -> player
     Right (d, _, _) -> player { playerMovement = Left d }
 
+isGameExiting :: GameState -> Bool
+isGameExiting GameExiting = True
+isGameExiting _ = False
+
 updateGameState :: (MonadIO m, ConfigsRead m, GameStateRead m, InputRead m, OutputRead m) => m GameState
 updateGameState = do
     cfgs <- readConfigs
@@ -50,22 +55,40 @@ updateGameState = do
     outs <- getOutputs
     case gs of
         GameMenu m -> liftIO $ updateGameStateInMenu m cfgs inputs gs outs
-        GameStateArea area -> return $ updateGameStateInArea cfgs inputs area
+        GameStateArea area -> return $ updateGameStateInArea outs cfgs inputs area
+        _ -> return gs
+
+incrementMenuCursor :: Menu -> Menu
+incrementMenuCursor m@(Menu _ opts c@(MenuCursor p _))
+    | p < length opts - 1 = m { cursor = c { cursorPos = p + 1 }}
+    | otherwise = m
+
+
+decrementMenuCursor :: Menu -> Menu
+decrementMenuCursor m@(Menu _ _ c@(MenuCursor 0 _)) = m
+decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos = p - 1 }}
 
 updateGameStateInMenu :: Menu -> Configs -> InputState -> GameState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs oldGS outs =
     if inputStateEnter inputs
-        then case menuState m of
-            MainMenu -> do
+        then case (options m !! curPos) of
+            GameStart -> do
                 area <- initOutsideArea cfgs outs
                 return $ GameStateArea area
-            PauseMenu a -> return $ GameStateArea a
-        else return oldGS
+            GameExit -> return GameExiting
+            GameStartMenu -> return $ GameMenu $ initMainMenu outs
+            GameContinue a -> return $ GameStateArea a
+        else case inputStateDirection inputs of
+            Just DUp -> return $ GameMenu $ decrementMenuCursor m
+            Just DDown -> return $ GameMenu $ incrementMenuCursor m
+            _ -> return oldGS
+    where
+        curPos = cursorPos $ cursor m
 
 
-updateGameStateInArea :: Configs -> InputState -> GameArea -> GameState
-updateGameStateInArea _ (InputState _ _ _ True) area = GameMenu (initPauseMenu area)
-updateGameStateInArea cfgs inputs area = GameStateArea $ area'' { background = background' }
+updateGameStateInArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
+updateGameStateInArea outs _ (InputState _ _ _ True) area = GameMenu (initPauseMenu outs area)
+updateGameStateInArea _ cfgs inputs area = GameStateArea $ area'' { background = background' }
     where
         (moved, player') = case inputStateDirection inputs of
             Nothing -> (False, stopMoveDirection $ gameStatePlayer area)

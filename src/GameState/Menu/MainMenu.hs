@@ -8,10 +8,11 @@ import qualified Data.Map.Strict as M
 import OutputHandles.Types
 import GameState.Types
 
-initMainMenu :: Menu
-initMainMenu = Menu words opts 0 MainMenu
+initMainMenu :: OutputHandles -> Menu
+initMainMenu outs = Menu words opts (MenuCursor 0 mushroomEntry)
     where
+        mushroomEntry = textures outs M.! "mushroom"
         words = [ TextDisplay "My Game" 10 10 175 100 White
-                , TextDisplay "Press ENTER to start" 75 150 100 20 White
+                , TextDisplay "Press ENTER to select" 75 150 100 20 White
                 ]
-        opts = [ ("Start", GameStart), ("Exit", GameExit)]
+        opts = [GameStart, GameExit]
