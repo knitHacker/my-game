@@ -4,6 +4,7 @@ module GameState.Types
     , GameArea(..)
     , Menu(..)
     , MenuState(..)
+    , MenuAction(..)
     , Player(..)
     , ItemManager
     , Item(..)
@@ -39,13 +40,17 @@ data GameState = GameState
 data MenuState = MainMenu
     | PauseMenu GameArea
 
+data MenuAction =
+    GameStart
+    | GameExit
+    | GameContinue
+
 data Menu = Menu
-    { texts :: M.Map Int TextDisplay
-    , cursor :: Maybe MenuCursor
+    { texts :: [TextDisplay]
+    , options :: [(Text, MenuAction), ]
+    , cursor :: Int
     , menuState :: MenuState
     }
-
-data MenuCursor = MenuCursor
 
 data GameArea = GameArea
     { background :: Background
