@@ -123,6 +123,7 @@ updateWindow = do
     case gs of
         GameMenu m -> return $ updateGameMenu m
         GameStateArea area -> return $ updateAreaWindow cfgs area
+        _ -> return $ ToRender M.empty []
 
 
 updateAreaWindow :: Configs -> GameArea -> ToRender
@@ -135,4 +136,33 @@ updateAreaWindow cfgs area = ToRender draws''' []
 
 
 updateGameMenu :: Menu -> ToRender
-updateGameMenu (Menu words _ _) = ToRender M.empty $ M.elems words
+updateGameMenu (Menu words opts cur) = ToRender M.empty words <> updateMenuOptions cur opts
+
+
+updateMenuOptions :: MenuCursor -> [MenuAction] -> ToRender
+updateMenuOptions (MenuCursor pos tE) ma = ToRender draws $ updateMenuOptions' ma 180
+    where
+        draws = M.singleton (bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing)
+        t = texture tE
+        tW = textureWidth tE
+        tH = textureHeight tE
+        w = fromIntegral tW
+        h = fromIntegral tH
+        xPos = 90
+        yPos = 182 + (20 * pos)
+        xPos' = fromIntegral xPos
+        yPos' = fromIntegral yPos
+        bottom = yPos' + h
+
+
+updateMenuOptions' :: [MenuAction] -> CInt -> [TextDisplay]
+updateMenuOptions' [] _ = []
+updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
+    where
+        newY = y + 20
+        dis = TextDisplay str x y w 15 Blue
+        (str, x, w) = case h of
+                        GameStart -> ("Start Game", 100, 50)
+                        GameExit -> ("Exit", 100, 18)
+                        GameContinue _ -> ("Continue", 100, 35)
+                        GameStartMenu -> ("Return to Main Menu", 100, 80)

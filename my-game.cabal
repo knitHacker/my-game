@@ -47,6 +47,7 @@ library
       GameState.Areas.Outside
       GameState.Collision
       GameState.Draw
+      GameState.Menu
       GameState.Menu.MainMenu
       GameState.Menu.PauseMenu
       GameState.Types

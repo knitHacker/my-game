@@ -17,13 +17,13 @@ import Control.Monad.Reader
 
 runGame :: AppEnvData -> IO ()
 runGame appEnvData = do
-    gameState' <- runAppEnv appEnvData updateGameState
     input <- runAppEnv appEnvData stepGame
-    let continue = not $ inputStateQuit input
+    gameState' <- runAppEnv appEnvData updateGameState
+    let stop = inputStateQuit input || isGameExiting gameState'
         appEnvData' = appEnvData { appEnvDataInputState = input, appEnvDataGameState = gameState' }
 
 
-    if continue
+    if not stop
     then do
         runGame appEnvData'
     else do

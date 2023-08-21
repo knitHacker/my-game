@@ -3,8 +3,8 @@ module GameState.Types
     , GameStateRead(..)
     , GameArea(..)
     , Menu(..)
-    , MenuState(..)
     , MenuAction(..)
+    , MenuCursor(..)
     , Player(..)
     , ItemManager
     , Item(..)
@@ -35,21 +35,24 @@ type ObjectMap = M.Map Unique BoardObject
 data GameState = GameState
     | GameMenu Menu
     | GameStateArea GameArea
+    | GameExiting
 
-
-data MenuState = MainMenu
-    | PauseMenu GameArea
 
 data MenuAction =
     GameStart
     | GameExit
-    | GameContinue
+    | GameContinue GameArea
+    | GameStartMenu
 
 data Menu = Menu
     { texts :: [TextDisplay]
-    , options :: [(Text, MenuAction), ]
-    , cursor :: Int
-    , menuState :: MenuState
+    , options :: [MenuAction]
+    , cursor :: MenuCursor
+    }
+
+data MenuCursor = MenuCursor
+    { cursorPos :: Int
+    , cursorTexture :: TextureEntry
     }
 
 data GameArea = GameArea
