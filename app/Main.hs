@@ -10,6 +10,7 @@ import Control.Monad
 import Foreign.C.Types
 import SDL.Vect
 import qualified SDL
+import Data.Time.Clock.System
 
 
 main :: IO ()
@@ -17,4 +18,5 @@ main = do
     configs <- initConfigs
     outs <- initOutputHandles configs
     appEnvData <- initAppEnvData configs outs
-    runGame appEnvData
+    time <- getSystemTime
+    runGame 0 time appEnvData

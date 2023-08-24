@@ -78,16 +78,16 @@ updateGameStateInMenu m cfgs inputs oldGS outs =
             GameExit -> return GameExiting
             GameStartMenu -> return $ GameMenu $ initMainMenu outs
             GameContinue a -> return $ GameStateArea a
-        else case inputStateDirection inputs of
-            Just DUp -> return $ GameMenu $ decrementMenuCursor m
-            Just DDown -> return $ GameMenu $ incrementMenuCursor m
+        else case (inputRepeat inputs, inputStateDirection inputs) of
+            (False, Just DUp) -> return $ GameMenu $ decrementMenuCursor m
+            (False, Just DDown) -> return $ GameMenu $ incrementMenuCursor m
             _ -> return oldGS
     where
         curPos = cursorPos $ cursor m
 
 
 updateGameStateInArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
-updateGameStateInArea outs _ (InputState _ _ _ True) area = GameMenu (initPauseMenu outs area)
+updateGameStateInArea outs _ (InputState _ _ _ True _) area = GameMenu (initPauseMenu outs area)
 updateGameStateInArea _ cfgs inputs area = GameStateArea $ area'' { background = background' }
     where
         (moved, player') = case inputStateDirection inputs of
