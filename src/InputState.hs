@@ -46,7 +46,7 @@ updateInput = do
     event <- SDL.pollEvent
     case event of
         (Just event) -> return $ newInput event
-        _ -> return input
+        _ -> return $ input { inputRepeat = True }
 
 
 newInput :: SDL.Event -> InputState

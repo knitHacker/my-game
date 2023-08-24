@@ -70,7 +70,7 @@ decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos
 
 updateGameStateInMenu :: Menu -> Configs -> InputState -> GameState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs oldGS outs =
-    if inputStateEnter inputs
+    if inputStateEnter inputs && not (inputRepeat inputs)
         then case (options m !! curPos) of
             GameStart -> do
                 area <- initOutsideArea cfgs outs
