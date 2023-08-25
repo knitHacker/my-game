@@ -36,7 +36,7 @@ data Configs = Configs
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
-    , character :: TextureCfg
+    , characters :: M.Map T.Text TextureCfg
     , areas :: M.Map T.Text TextureCfg
     , items :: M.Map T.Text TextureCfg
     , barriers :: M.Map T.Text TextureCfg

@@ -47,7 +47,7 @@ initOutputHandles cfgs = do
     textures <- loadAreaTextures cfgs r
     itemTextures <- loadItemTextures cfgs r
     barrierTextures <- loadBarrierTextures cfgs r
-    textures' <- loadCharTexture (M.union (M.union textures itemTextures) barrierTextures) cfgs r
+    textures' <- loadCharTextures (M.union (M.union textures itemTextures) barrierTextures) cfgs r
     print $ fst <$> M.toList textures'
     return $ OutputHandles window r textures' font ratioX ratioY
     where
@@ -67,20 +67,21 @@ loadTexture r (name, textureCfg) = do
         t <- SDL.Image.loadTexture r path
         return $ Just (name, TextureEntry (sizeX textureCfg) (sizeY textureCfg) t)
     else do
-        putStrLn $ "Faied to load iamge: " ++ file textureCfg
+        putStrLn $ "Failed to load image: " ++ file textureCfg
         return Nothing
 
-loadCharTexture :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
-loadCharTexture tm cfgs r = do
-    textureM <- loadTexture r ("character", character cfgs)
-    case textureM of
-        Nothing -> return tm
-        Just (name, tex) -> return $ M.insert name tex tm
+loadCharTextures :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
+loadCharTextures tm cfgs r = do
+    textures <- mapM (loadTexture r) charCfg
+    let textures' = catMaybes textures
+    return $ M.union tm $ M.fromList textures'
+    where
+        charCfg = M.toList $ characters cfgs
 
 
 loadAreaTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadAreaTextures cfgs r = do
-    textures <- mapM (loadTexture r)  areasCfg
+    textures <- mapM (loadTexture r) areasCfg
     let textures' = catMaybes textures
     return $ M.fromList textures'
     where
