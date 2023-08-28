@@ -63,6 +63,11 @@ initConfigs = do
 class Monad m => ConfigsRead m where
     readConfigs :: m Configs
 
+    debugMode :: m Bool
+    debugMode = do
+        cfgs <- readConfigs
+        return $ debug cfgs
+
 
 
 
