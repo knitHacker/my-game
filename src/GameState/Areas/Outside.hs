@@ -30,7 +30,7 @@ instance Show Unique where
 initPlayer :: OutputHandles -> Player
 initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
     where
-        textureEntry = textures outs ! "main"
+        textureEntry = textures outs ! "dog"
         startX = 0
         startY = 0
 
