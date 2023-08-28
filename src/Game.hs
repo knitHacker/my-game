@@ -16,15 +16,18 @@ import Control.Monad.Reader
 import Data.Time.Clock.System
 import Data.Word
 
+framesPerSecond :: Word32
+framesPerSecond = 60
+
 frameTime :: Word32
-frameTime = 16666667
+frameTime = div 1000000000 (framesPerSecond + 1)
 
 runGame :: Word32 -> SystemTime -> AppEnvData -> IO ()
 runGame count pTime appEnvData = do
     time <- getSystemTime
     if systemSeconds time /= systemSeconds pTime
         then do
-            print count
+            putStrLn $ "Frame rate: " ++ show count
             run 0 time appEnvData
         else do
             let diff = ((systemNanoseconds time) - (systemNanoseconds pTime))
