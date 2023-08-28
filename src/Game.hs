@@ -26,7 +26,7 @@ runGame count pTime appEnvData = do
         then 
             run 0 time appEnvData
         else do
-            let diff = ((systemNanoseconds pTime) - (systemNanoseconds time))
+            let diff = ((systemNanoseconds time) - (systemNanoseconds pTime))
             print diff
             run (count + 1) time appEnvData
 
