@@ -23,12 +23,16 @@ runGame :: Word32 -> SystemTime -> AppEnvData -> IO ()
 runGame count pTime appEnvData = do
     time <- getSystemTime
     if systemSeconds time /= systemSeconds pTime
-        then 
+        then do
+            print count
             run 0 time appEnvData
         else do
             let diff = ((systemNanoseconds time) - (systemNanoseconds pTime))
-            print diff
-            run (count + 1) time appEnvData
+            if diff < frameTime
+                then
+                    runGame count pTime appEnvData
+                else
+                    run (count + 1) time appEnvData
 
 
 run :: Word32 -> SystemTime -> AppEnvData -> IO ()
