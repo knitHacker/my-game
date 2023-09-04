@@ -15,9 +15,10 @@ import Paths_my_game
 import GHC.Generics
 import Data.Aeson
 import Data.Either
-import System.Directory
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+
+import Env.Files    (getGameFullPath)
 
 configFile :: FilePath
 configFile = "data/configs/game.json"
@@ -68,16 +69,12 @@ instance FromJSON Configs
 
 initConfigs :: IO Configs
 initConfigs = do
-    path <- getDataFileName configFile
-    fileExists <- doesFileExist path
-    if fileExists
-    then do
-        configsM <- eitherDecodeFileStrict path
-        print configsM
-        case configsM of
-            Left err -> error ("Failed to parse config file" ++ (show err))
-            Right configs -> return configs
-    else error ("Missing config file required for game: " ++ show path)
+    path <- getGameFullPath configFile
+    configsM <- eitherDecodeFileStrict path
+    print configsM
+    case configsM of
+        Left err -> error ("Failed to parse config file" ++ (show err))
+        Right configs -> return configs
 
 
 class Monad m => ConfigsRead m where

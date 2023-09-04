@@ -25,6 +25,7 @@ import GameState
 import GameState.Draw
 import OutputHandles.Types
 import OutputHandles.Draw
+import Env.Files            (getGameFullPath)
 
 fontFile :: FilePath
 fontFile = "assets/fonts/InsightSansSSi.ttf"
@@ -38,17 +39,9 @@ rendererConfig = SDL.RendererConfig
   }
 
 
-getFontFile :: IO FilePath
-getFontFile = do
-    path <- getDataFileName fontFile
-    fileExists <- doesFileExist path
-    if fileExists
-        then return path
-        else error ("Failed to find fonts at " ++ show path)
-
 initOutputHandles :: Configs -> IO OutputHandles
 initOutputHandles cfgs = do
-    fontPath <- getFontFile
+    fontPath <- getGameFullPath fontFile
     SDL.initialize []
     Font.initialize
     window <- SDL.createWindow "My Game" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
