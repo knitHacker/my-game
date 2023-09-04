@@ -22,15 +22,19 @@ import Control.Monad.IO.Class
 import Data.Unique
 
 
+mainCharName :: T.Text
+mainCharName = "dog"
+
 instance Show Unique where
     show = show . hashUnique
 
 
 -- bad literals in code
-initPlayer :: OutputHandles -> Player
-initPlayer outs = Player textureEntry (startX, startY) (Left DDown) mempty
+initPlayer :: Configs -> OutputHandles -> Player
+initPlayer cfgs outs = Player textureEntry bb (startX, startY) (Left DDown) mempty
     where
-        textureEntry = textures outs ! "main"
+        textureEntry = textures outs ! mainCharName
+        bb = charHitBox $ characters cfgs ! mainCharName
         startX = 0
         startY = 0
 
@@ -85,7 +89,7 @@ initOutsideArea :: Configs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
     (back, m, cm) <- initBackground outs
     (im, m', cm') <- initItems outs back m cm
-    return $ GameArea back (initPlayer outs) im m' cm'
+    return $ GameArea back (initPlayer cfgs outs) im m' cm'
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do

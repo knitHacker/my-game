@@ -26,6 +26,8 @@ import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 import Data.Unique
 
+import Debug.Trace
+
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
 --    area <- initOutsideArea cfgs outs
@@ -115,7 +117,7 @@ updateBackground cfgs back player = back { xOffset = getOffset playerX windowX x
 
 collisionCheck :: GameArea -> Player -> GameArea
 collisionCheck gs player =
-    case detectCollision (playerX, collideYStart, playerWidth, collideHeight) cm of
+    case detectCollision (playerX, collideYStart, playerWidth, collideHeight') cm of
         [] -> gs { gameStatePlayer = player }
         collisions ->
             let newState = foldl updateObject (Right (items, cm, player)) collisions
@@ -124,8 +126,8 @@ collisionCheck gs player =
                     Right (items', cm', player') -> (items', cm', player')
             in gs { gameStatePlayer = player', gameStateItemManager = items', collisionMap = cm' }
     where
-        collideHeight = 4
-        collideYStart = playerY + playerHeight - collideHeight
+        collideHeight' = collideHeight $ playerHitBox player
+        collideYStart = playerY + playerHeight - collideHeight'
         cm = collisionMap gs
         items = gameStateItemManager gs
         om = collisionObjects gs
@@ -176,7 +178,7 @@ fixPlayerPosition player x y w h =
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
-updatePlayer back player@(Player cfg pos (Right (d, l, f)) items) newDir
+updatePlayer back player@(Player cfg bb pos (Right (d, l, f)) items) newDir
     | d == newDir && l >= 6 = player {playerPosition =
         newPosition back player newDir, playerMovement = Right (newDir, 0, mod (f + 1) 8 ) }
     | d == newDir = player {playerMovement = Right (d, l + 1, f)}

@@ -74,11 +74,12 @@ class Monad m => GameStateRead m where
 
 
 getDirection :: Player -> Direction
-getDirection (Player _ _ (Left d) _) = d
-getDirection (Player _ _ (Right (d, _, _)) _) = d
+getDirection (Player _ _ _ (Left d) _) = d
+getDirection (Player _ _ _ (Right (d, _, _)) _) = d
 
 data Player = Player
     { playerTexture :: TextureEntry
+    , playerHitBox :: HitBox
     , playerPosition :: (Int, Int)
     , playerMovement :: Either Direction (Direction, Int, Int)
     , playerItems :: M.Map ItemType Int

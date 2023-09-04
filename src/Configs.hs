@@ -5,6 +5,8 @@ module Configs
     , initConfigs
     , ConfigsRead(..)
     , TextureCfg(..)
+    , HitBox(..)
+    , CharacterCfg(..)
     ) where
 
 import Control.Monad
@@ -30,13 +32,31 @@ data TextureCfg = TextureCfg
 instance ToJSON TextureCfg
 instance FromJSON TextureCfg
 
+data HitBox = HitBox
+    { sideWidth :: Int
+    , frontWidth :: Int
+    , collideHeight :: Int
+    } deriving (Generic, Show, Eq, Ord)
+
+instance ToJSON HitBox
+instance FromJSON HitBox
+
+data CharacterCfg = CharacterCfg
+    { charTexture :: TextureCfg
+    , charHitBox :: HitBox
+    } deriving (Generic, Show, Eq, Ord)
+
+instance ToJSON CharacterCfg
+instance FromJSON CharacterCfg
+
+
 data Configs = Configs
     { debug :: Bool
     , boardSizeX :: Int
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
-    , characters :: M.Map T.Text TextureCfg
+    , characters :: M.Map T.Text CharacterCfg
     , areas :: M.Map T.Text TextureCfg
     , items :: M.Map T.Text TextureCfg
     , barriers :: M.Map T.Text TextureCfg

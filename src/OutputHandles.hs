@@ -72,7 +72,7 @@ loadTexture r (name, textureCfg) = do
 
 loadCharTextures :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
 loadCharTextures tm cfgs r = do
-    textures <- mapM (loadTexture r) charCfg
+    textures <- mapM (loadTexture r . (charTexture <$>)) charCfg
     let textures' = catMaybes textures
     return $ M.union tm $ M.fromList textures'
     where

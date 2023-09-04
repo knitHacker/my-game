@@ -27,7 +27,7 @@ runGame count pTime appEnvData = do
     time <- getSystemTime
     if systemSeconds time /= systemSeconds pTime
         then do
-            putStrLn $ "Frame rate: " ++ show count
+            -- putStrLn $ "Frame rate: " ++ show count
             run 0 time appEnvData
         else do
             let diff = ((systemNanoseconds time) - (systemNanoseconds pTime))
