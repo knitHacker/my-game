@@ -64,23 +64,16 @@ initOutputHandles cfgs = do
         ratioX = fromIntegral screenWidth / fromIntegral boardX
         ratioY = fromIntegral screenHeight / fromIntegral boardY
 
-loadTexture :: SDL.Renderer -> (T.Text, TextureCfg) -> IO (Maybe (T.Text, TextureEntry))
+loadTexture :: SDL.Renderer -> (T.Text, TextureCfg) -> IO (T.Text, TextureEntry)
 loadTexture r (name, textureCfg) = do
-    path <- getDataFileName $ file textureCfg
-    fileExists <- doesFileExist path
-    if fileExists
-    then do
-        t <- SDL.Image.loadTexture r path
-        return $ Just (name, TextureEntry (sizeX textureCfg) (sizeY textureCfg) t)
-    else do
-        putStrLn $ "Failed to load image: " ++ file textureCfg
-        return Nothing
+    path <- getGameFullPath $ file textureCfg
+    t <- SDL.Image.loadTexture r path
+    return (name, TextureEntry (sizeX textureCfg) (sizeY textureCfg) t)
 
 loadCharTextures :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
 loadCharTextures tm cfgs r = do
     textures <- mapM (loadTexture r . (charTexture <$>)) charCfg
-    let textures' = catMaybes textures
-    return $ M.union tm $ M.fromList textures'
+    return $ M.union tm $ M.fromList textures
     where
         charCfg = M.toList $ characters cfgs
 
@@ -88,16 +81,14 @@ loadCharTextures tm cfgs r = do
 loadAreaTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadAreaTextures cfgs r = do
     textures <- mapM (loadTexture r) areasCfg
-    let textures' = catMaybes textures
-    return $ M.fromList textures'
+    return $ M.fromList textures
     where
         areasCfg = M.toList $ areas cfgs
 
 loadItemTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadItemTextures cfgs r = do
     textures <- mapM (loadTexture r)  itemCfg
-    let textures' = catMaybes textures
-    return $ M.fromList textures'
+    return $ M.fromList textures
     where
         itemCfg = M.toList $ items cfgs
 
@@ -105,8 +96,7 @@ loadItemTextures cfgs r = do
 loadBarrierTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadBarrierTextures cfgs r = do
     textures <- mapM (loadTexture r) barrierCfg
-    let textures' = catMaybes textures
-    return $ M.fromList textures'
+    return $ M.fromList textures
     where
         barrierCfg = M.toList $ barriers cfgs
 
