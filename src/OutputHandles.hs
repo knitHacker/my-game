@@ -26,6 +26,9 @@ import GameState.Draw
 import OutputHandles.Types
 import OutputHandles.Draw
 
+fontFile :: FilePath
+fontFile = "assets/fonts/InsightSansSSi.ttf"
+
 type TextureMap = M.Map T.Text TextureEntry
 
 rendererConfig :: SDL.RendererConfig
@@ -34,8 +37,18 @@ rendererConfig = SDL.RendererConfig
   , SDL.rendererTargetTexture = False
   }
 
+
+getFontFile :: IO FilePath
+getFontFile = do
+    path <- getDataFileName fontFile
+    fileExists <- doesFileExist path
+    if fileExists
+        then return path
+        else error ("Failed to find fonts at " ++ show path)
+
 initOutputHandles :: Configs -> IO OutputHandles
 initOutputHandles cfgs = do
+    fontPath <- getFontFile
     SDL.initialize []
     Font.initialize
     window <- SDL.createWindow "My Game" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
@@ -43,7 +56,7 @@ initOutputHandles cfgs = do
     r <- SDL.createRenderer window (-1) rendererConfig
     -- clears the screen
     initWindow r
-    font <- Font.load "assets/fonts/InsightSansSSi.ttf" 12
+    font <- Font.load fontPath 12
     textures <- loadAreaTextures cfgs r
     itemTextures <- loadItemTextures cfgs r
     barrierTextures <- loadBarrierTextures cfgs r

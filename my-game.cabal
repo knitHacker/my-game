@@ -26,6 +26,7 @@ extra-source-files:
     assets/images/mushroom.png
     assets/images/outside.png
     assets/images/pond.png
+    assets/fonts/InsightSansSSi.ttf
 data-files:
     data/configs/game.json
     assets/images/outside.png
@@ -34,6 +35,7 @@ data-files:
     assets/images/mushroom.png
     assets/images/lavender.png
     assets/images/pond.png
+    assets/fonts/InsightSansSSi.ttf
 
 source-repository head
   type: git

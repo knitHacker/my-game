@@ -11,6 +11,7 @@ extra-source-files:
 - ChangeLog.md
 - data/configs/*.json
 - assets/images/*.png
+- assets/fonts/*.ttf
 
 data-files:
 - data/configs/game.json
@@ -20,6 +21,7 @@ data-files:
 - assets/images/mushroom.png
 - assets/images/lavender.png
 - assets/images/pond.png
+- assets/fonts/InsightSansSSi.ttf
 
 # Metadata used when publishing your package
 # synopsis:            Short description of your package
