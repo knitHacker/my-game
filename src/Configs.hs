@@ -77,7 +77,7 @@ initConfigs = do
         case configsM of
             Left err -> error ("Failed to parse config file" ++ (show err))
             Right configs -> return configs
-    else error "Missing config file required for game"
+    else error ("Missing config file required for game: " ++ show path)
 
 
 class Monad m => ConfigsRead m where
