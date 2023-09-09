@@ -178,11 +178,13 @@ fixPlayerPosition player x y w h =
 
 
 updatePlayer :: Background -> Player -> Direction -> Player
-updatePlayer back player@(Player cfg bb pos (Right (d, l, f)) items) newDir
-    | d == newDir && l >= 6 = player {playerPosition =
+updatePlayer back player@(Player cfg bb pos (Right (d, l, f)) items mCfg) newDir
+    | d == newDir && l >= rate = player {playerPosition =
         newPosition back player newDir, playerMovement = Right (newDir, 0, mod (f + 1) 8 ) }
     | d == newDir = player {playerMovement = Right (d, l + 1, f)}
     | otherwise = player { playerPosition = newPosition back player newDir, playerMovement = Right (newDir, 0, 0) }
+    where
+        rate = stepRate mCfg
 updatePlayer back player dir = player { playerPosition = newPosition back player dir, playerMovement = Right (dir, 0, 0) }
 
 
@@ -191,7 +193,8 @@ newPosition back player dir = (x'', y'')
     where
         charSizeX = textureWidth (playerTexture player)
         charSizeY = textureHeight (playerTexture player)
-        (xMove, yMove) = updatePosition dir
+        moveAmt = moveStep $ playerCfgs player
+        (xMove, yMove) = updatePosition moveAmt dir
         xMax = (textureWidth $ area back) - charSizeX
         yMax = (textureHeight $ area back) - charSizeY
         xMin = 0
@@ -203,8 +206,8 @@ newPosition back player dir = (x'', y'')
         y'' = max (min y' yMax) yMin
 
 
-updatePosition :: Direction -> (Int, Int)
-updatePosition DUp = (0, -5)
-updatePosition DDown = (0, 5)
-updatePosition DLeft = (-5, 0)
-updatePosition DRight = (5, 0)
+updatePosition :: Int -> Direction -> (Int, Int)
+updatePosition m DUp = (0, -m)
+updatePosition m DDown = (0, m)
+updatePosition m DLeft = (-m, 0)
+updatePosition m DRight = (m, 0)

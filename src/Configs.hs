@@ -7,6 +7,7 @@ module Configs
     , TextureCfg(..)
     , HitBox(..)
     , CharacterCfg(..)
+    , CharacterMovement(..)
     ) where
 
 import Control.Monad
@@ -42,9 +43,18 @@ data HitBox = HitBox
 instance ToJSON HitBox
 instance FromJSON HitBox
 
+data CharacterMovement = CharacterMovement
+    { moveStep :: Int
+    , stepRate :: Int
+    } deriving (Generic, Show, Eq, Ord)
+
+instance ToJSON CharacterMovement
+instance FromJSON CharacterMovement
+
 data CharacterCfg = CharacterCfg
     { charTexture :: TextureCfg
     , charHitBox :: HitBox
+    , charMovement :: CharacterMovement
     } deriving (Generic, Show, Eq, Ord)
 
 instance ToJSON CharacterCfg
@@ -71,7 +81,7 @@ initConfigs :: IO Configs
 initConfigs = do
     path <- getGameFullPath configFile
     configsM <- eitherDecodeFileStrict path
-    print configsM
+    -- print configsM
     case configsM of
         Left err -> error ("Failed to parse config file" ++ (show err))
         Right configs -> return configs
@@ -84,7 +94,3 @@ class Monad m => ConfigsRead m where
     debugMode = do
         cfgs <- readConfigs
         return $ debug cfgs
-
-
-
-

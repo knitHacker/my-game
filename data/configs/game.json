@@ -1,7 +1,7 @@
 {
     "debug": true,
-    "windowSizeX": 1500,
-    "windowSizeY": 1300,
+    "windowSizeX": 1000,
+    "windowSizeY": 800,
     "boardSizeX": 250,
     "boardSizeY": 250,
     "characters": {
@@ -15,6 +15,10 @@
                 "sideWidth": 16,
                 "frontWidth": 16,
                 "collideHeight": 4
+            },
+            "charMovement": {
+                "moveStep": 5,
+                "stepRate": 4
             }
         },
         "dog": {
@@ -27,6 +31,10 @@
                 "sideWidth": 36,
                 "frontWidth": 12,
                 "collideHeight": 4
+            },
+            "charMovement": {
+                "moveStep": 5,
+                "stepRate": 4
             }
         }
     },

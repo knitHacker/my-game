@@ -273,8 +273,7 @@ clear i@(lower, upper) st =
     case getOrder i (getInterval st) of
         Same -> Nothing
         Over -> Nothing
-        In -> 
-        
+        In ->
         _ -> Just st
     where
         clearIn = case st of

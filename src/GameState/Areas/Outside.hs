@@ -31,10 +31,12 @@ instance Show Unique where
 
 -- bad literals in code
 initPlayer :: Configs -> OutputHandles -> Player
-initPlayer cfgs outs = Player textureEntry bb (startX, startY) (Left DDown) mempty
+initPlayer cfgs outs = Player textureEntry bb (startX, startY) (Left DDown) mempty cc
     where
+        charCfgs = characters cfgs ! mainCharName
         textureEntry = textures outs ! mainCharName
-        bb = charHitBox $ characters cfgs ! mainCharName
+        bb = charHitBox charCfgs
+        cc = charMovement charCfgs
         startX = 0
         startY = 0
 

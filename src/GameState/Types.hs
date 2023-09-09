@@ -74,8 +74,9 @@ class Monad m => GameStateRead m where
 
 
 getDirection :: Player -> Direction
-getDirection (Player _ _ _ (Left d) _) = d
-getDirection (Player _ _ _ (Right (d, _, _)) _) = d
+getDirection p = case playerMovement p of
+    Left d -> d
+    Right (d, _, _) -> d
 
 data Player = Player
     { playerTexture :: TextureEntry
@@ -83,6 +84,7 @@ data Player = Player
     , playerPosition :: (Int, Int)
     , playerMovement :: Either Direction (Direction, Int, Int)
     , playerItems :: M.Map ItemType Int
+    , playerCfgs :: CharacterMovement
     }
 
 

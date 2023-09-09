@@ -54,7 +54,7 @@ initOutputHandles cfgs = do
     itemTextures <- loadItemTextures cfgs r
     barrierTextures <- loadBarrierTextures cfgs r
     textures' <- loadCharTextures (M.union (M.union textures itemTextures) barrierTextures) cfgs r
-    print $ fst <$> M.toList textures'
+    -- print $ fst <$> M.toList textures'
     return $ OutputHandles window r textures' font ratioX ratioY
     where
         screenWidth = fromIntegral $ windowSizeX cfgs
