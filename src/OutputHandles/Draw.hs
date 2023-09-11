@@ -94,12 +94,16 @@ draw r d = do
 scaleDraw :: Double -> Double -> Draw -> Draw
 scaleDraw rX rY (Draw t pX pY w h m) = Draw t (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) m
     where
+        scale 0 _ = 0
+        scale _ 0 = 0
         scale o r = floor ((fromIntegral o) * r)
 
 
 scaleWords :: Double -> Double -> TextDisplay -> TextDisplay
 scaleWords rX rY (TextDisplay wd pX pY w h c) = TextDisplay wd (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) c
     where
+        scale 0 _ = 0
+        scale _ 0 = 0
         scale o r = floor ((fromIntegral o) * r)
 
 

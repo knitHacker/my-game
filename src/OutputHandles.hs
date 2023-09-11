@@ -27,6 +27,7 @@ import OutputHandles.Types
 import OutputHandles.Draw
 import Env.Files            (getGameFullPath)
 
+
 fontFile :: FilePath
 fontFile = "assets/fonts/InsightSansSSi.ttf"
 
@@ -34,7 +35,7 @@ type TextureMap = M.Map T.Text TextureEntry
 
 rendererConfig :: SDL.RendererConfig
 rendererConfig = SDL.RendererConfig
-  { SDL.rendererType = SDL.AcceleratedVSyncRenderer
+  { SDL.rendererType = SDL.AcceleratedRenderer
   , SDL.rendererTargetTexture = False
   }
 

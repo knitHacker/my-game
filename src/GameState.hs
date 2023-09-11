@@ -31,7 +31,7 @@ import Debug.Trace
 initGameState :: Configs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
 --    area <- initOutsideArea cfgs outs
-    return $ GameMenu $ initMainMenu outs
+    return $ GameMenu (initMainMenu outs) True
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
@@ -56,8 +56,8 @@ updateGameState = do
     gs <- readGameState
     outs <- getOutputs
     case gs of
-        GameMenu m -> liftIO $ updateGameStateInMenu m cfgs inputs gs outs
-        GameStateArea area -> return $ updateGameStateInArea outs cfgs inputs area
+        GameMenu m _ -> liftIO $ updateGameStateInMenu m cfgs inputs outs
+        GameStateArea area _ -> return $ updateGameStateInArea outs cfgs inputs area
         _ -> return gs
 
 incrementMenuCursor :: Menu -> Menu
@@ -70,31 +70,35 @@ decrementMenuCursor :: Menu -> Menu
 decrementMenuCursor m@(Menu _ _ c@(MenuCursor 0 _)) = m
 decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos = p - 1 }}
 
-updateGameStateInMenu :: Menu -> Configs -> InputState -> GameState -> OutputHandles -> IO GameState
-updateGameStateInMenu m cfgs inputs oldGS outs =
+updateGameStateInMenu :: Menu -> Configs -> InputState -> OutputHandles -> IO GameState
+updateGameStateInMenu m cfgs inputs outs =
     if inputStateEnter inputs && not (inputRepeat inputs)
         then case (options m !! curPos) of
             GameStart -> do
                 area <- initOutsideArea cfgs outs
-                return $ GameStateArea area
+                return $ GameStateArea area True
             GameExit -> return GameExiting
-            GameStartMenu -> return $ GameMenu $ initMainMenu outs
-            GameContinue a -> return $ GameStateArea a
+            GameStartMenu -> return $ GameMenu (initMainMenu outs) True
+            GameContinue a -> return $ GameStateArea a True
         else case (inputRepeat inputs, inputStateDirection inputs) of
-            (False, Just DUp) -> return $ GameMenu $ decrementMenuCursor m
-            (False, Just DDown) -> return $ GameMenu $ incrementMenuCursor m
-            _ -> return oldGS
+            (False, Just DUp) -> return $ GameMenu (decrementMenuCursor m) True
+            (False, Just DDown) -> return $ GameMenu (incrementMenuCursor m) True
+            _ -> return (GameMenu m False)
     where
         curPos = cursorPos $ cursor m
 
 
 updateGameStateInArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
-updateGameStateInArea outs _ (InputState _ _ _ True _) area = GameMenu (initPauseMenu outs area)
-updateGameStateInArea _ cfgs inputs area = GameStateArea $ area'' { background = background' }
+updateGameStateInArea outs _ (InputState _ _ _ True _) area = GameMenu (initPauseMenu outs area) True
+updateGameStateInArea _ _ (InputState _ Nothing _ _ _) a@(GameArea _ (Player _ _ _ (Left _) _ _) _ _ _) =
+    GameStateArea a False
+updateGameStateInArea _ cfgs inputs area = GameStateArea (area'' { background = background' }) True
     where
-        (moved, player') = case inputStateDirection inputs of
-            Nothing -> (False, stopMoveDirection $ gameStatePlayer area)
-            Just dir -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
+        player = gameStatePlayer area
+        (moved, player') = case (inputStateDirection inputs, playerMovement player) of
+            (Nothing, Left _) -> (False, player)
+            (Nothing, Right (d, _, _)) -> (False, player { playerMovement = Left d })
+            (Just dir, _) -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
         area' = (area { gameStatePlayer = player' })
         area'' = if moved then collisionCheck area player' else area'
         background' = updateBackground cfgs (background area'') player'

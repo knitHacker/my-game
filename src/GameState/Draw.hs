@@ -116,14 +116,16 @@ drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (bottom, 0, xPos') (Dr
         yPos' = fromIntegral (yPos - yStart)
         bottom = yPos'
 
-updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m ToRender
+updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do
     cfgs <- readConfigs
     gs <- readGameState
     case gs of
-        GameMenu m -> return $ updateGameMenu m
-        GameStateArea area -> return $ updateAreaWindow cfgs area
-        _ -> return $ ToRender M.empty []
+        GameMenu m True -> return $ Just $ updateGameMenu m
+        GameMenu _ False -> return Nothing
+        GameStateArea area True -> return $ Just $ updateAreaWindow cfgs area
+        GameStateArea _ False -> return Nothing
+        _ -> return $ Just $ ToRender M.empty []
 
 
 updateAreaWindow :: Configs -> GameArea -> ToRender
