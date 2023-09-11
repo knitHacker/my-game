@@ -32,9 +32,9 @@ import Utils
 type ObjectMap = M.Map Unique BoardObject
 
 
-data GameState = GameState
-    | GameMenu Menu
-    | GameStateArea GameArea
+data GameState =
+    GameMenu Menu Bool
+    | GameStateArea GameArea Bool
     | GameExiting
 
 

@@ -27,7 +27,7 @@ runGame count pTime appEnvData = do
     time <- getSystemTime
     if systemSeconds time /= systemSeconds pTime
         then do
-            -- putStrLn $ "Frame rate: " ++ show count
+            putStrLn $ "Frame rate: " ++ show count
             run 0 time appEnvData
         else do
             let diff = ((systemNanoseconds time) - (systemNanoseconds pTime))
@@ -56,6 +56,8 @@ run count time appEnvData = do
 stepGame :: AppEnv InputState
 stepGame = do
     appEnvData <- ask
-    draws <- updateWindow
-    executeDraw draws
+    drawsM <- updateWindow
+    case drawsM of
+        Just draws -> executeDraw draws
+        _ -> return ()
     updateInput

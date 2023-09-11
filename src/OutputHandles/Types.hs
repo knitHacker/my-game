@@ -21,8 +21,8 @@ import qualified Data.Text as T
 type Draws = M.Map (CInt, Int, CInt) Draw
 
 data ToRender = ToRender
-    { draws :: Draws
-    , drawWords :: [TextDisplay]
+    { draws :: !Draws
+    , drawWords :: ![TextDisplay]
     }
 
 instance Monoid ToRender where
