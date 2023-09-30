@@ -6,30 +6,28 @@ module GameState.Types
     , MenuAction(..)
     , MenuCursor(..)
     , Player(..)
+    , PlayerMovement(..)
     , ItemManager
     , Item(..)
     , ItemType(..)
     , ItemState(..)
     , Background(..)
-    , BoardObject(..)
-    , ObjectMap
     , getItemDimensions
-    , getDirection
     ) where
 
 import Control.Monad
 import Control.Monad.IO.Class
 import qualified Data.Map.Strict as M
 import Data.Unique
+import Data.Word
 
 import Configs
 import InputState
 import OutputHandles.Types
-import GameState.Collision
+import GameState.Collision.RTree
+import GameState.Collision.BoundBox
 
 import Utils
-
-type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState =
@@ -43,6 +41,12 @@ data MenuAction =
     | GameExit
     | GameContinue GameArea
     | GameStartMenu
+
+data PlayerMovement = PlayerMove
+    { playerDirection :: Direction
+    , lastMoveTimestamp :: Word32
+    , animationFrame :: Int
+    }
 
 data Menu = Menu
     { texts :: [TextDisplay]
@@ -59,30 +63,18 @@ data GameArea = GameArea
     { background :: Background
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
-    , collisionObjects :: ObjectMap
-    , collisionMap :: CollisionMap Unique
+    , collisionMap :: RTree Unique
     }
-
-
-data BoardObject =
-      BoardItem
-    | BoardBarrier
 
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState
 
-
-getDirection :: Player -> Direction
-getDirection p = case playerMovement p of
-    Left d -> d
-    Right (d, _, _) -> d
-
 data Player = Player
     { playerTexture :: TextureEntry
     , playerHitBox :: HitBox
     , playerPosition :: (Int, Int)
-    , playerMovement :: Either Direction (Direction, Int, Int)
+    , playerMovement :: Either Direction PlayerMovement
     , playerItems :: M.Map ItemType Int
     , playerCfgs :: CharacterMovement
     }
@@ -115,8 +107,9 @@ type ItemManager = M.Map Unique ItemState
 
 
 data Background = Background
-    { area :: TextureEntry
-    , xOffset :: Int
-    , yOffset :: Int
+    { backArea :: TextureEntry
+    , backXOffset :: Int
+    , backYOffset :: Int
     , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
+    , backCollisions :: RTree Unique
     }

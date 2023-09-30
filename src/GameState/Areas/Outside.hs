@@ -48,7 +48,7 @@ initItems outs back m cm = do
     return $ insertItems uniqs m cm (Item mushroomEntry Mushroom) itemPos
     where
         mushroomEntry = textures outs ! "mushroom"
-        backT = area back
+        backT = backArea back
         boardWidth = textureWidth backT
         boardHeight = textureHeight backT
         boardSize = boardWidth * boardHeight
