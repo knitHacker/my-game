@@ -1,13 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 
 module Configs
     ( Configs(..)
     , initConfigs
     , ConfigsRead(..)
     , TextureCfg(..)
-    , HitBox(..)
     , CharacterCfg(..)
     , CharacterMovement(..)
+    , CharacterHitBoxes(..)
     ) where
 
 import Control.Monad
@@ -15,10 +16,12 @@ import System.IO
 import Paths_my_game
 import GHC.Generics
 import Data.Aeson
+import Data.Aeson.Types
 import Data.Either
 import Data.Word (Word32)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
+import GameState.Collision.BoundBox
 
 import Env.Files    (getGameFullPath)
 
@@ -32,34 +35,44 @@ data TextureCfg = TextureCfg
     , file :: FilePath
     } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON TextureCfg
 instance FromJSON TextureCfg
 
-data HitBox = HitBox
-    { hitboxX1 :: Int
-    , hitboxY1 :: Int
-    , hitboxX2 :: Int
-    , hitboxY2 :: Int
-    } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON HitBox
-instance FromJSON HitBox
+data CharacterHitBoxes = CharHB
+    { frontHitbox :: BoundBox
+    , sideHitbox :: BoundBox
+    } deriving (Show, Eq, Ord)
+
+instance FromJSON CharacterHitBoxes where
+    parseJSON (Object o) = do
+        frontB <- o .: "frontHitbox"
+        sideB <- o .: "sideHitbox"
+        let parseBB hb = do
+                x1 <- hb .: "x1"
+                y1 <- hb .: "y1"
+                x2 <- hb .: "x2"
+                y2 <- hb .: "y2"
+                return $ bb x1 y1 x2 y2
+        fBB <- parseBB frontB
+        sBB <- parseBB sideB
+        return $ CharHB fBB sBB
+
+    parseJSON invalid = prependFailure "parsing CharHB failed, "
+            (typeMismatch "Object" invalid)
 
 data CharacterMovement = CharacterMovement
     { moveStep :: Int
     , stepRate :: Word32
     } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON CharacterMovement
 instance FromJSON CharacterMovement
 
 data CharacterCfg = CharacterCfg
     { charTexture :: TextureCfg
-    , charHitBox :: HitBox
+    , charHitBox :: CharacterHitBoxes
     , charMovement :: CharacterMovement
     } deriving (Generic, Show, Eq, Ord)
 
-instance ToJSON CharacterCfg
 instance FromJSON CharacterCfg
 
 
@@ -76,7 +89,6 @@ data Configs = Configs
     } deriving (Generic, Show, Eq)
 
 
-instance ToJSON Configs
 instance FromJSON Configs
 
 initConfigs :: IO Configs
@@ -85,7 +97,7 @@ initConfigs = do
     configsM <- eitherDecodeFileStrict path
     -- print configsM
     case configsM of
-        Left err -> error ("Failed to parse config file" ++ (show err))
+        Left err -> error ("Failed to parse config file: " ++ (show err))
         Right configs -> return configs
 
 

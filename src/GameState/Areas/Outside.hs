@@ -34,12 +34,11 @@ instance Show Unique where
 
 -- bad literals in code
 initPlayer :: Configs -> OutputHandles -> Player
-initPlayer cfgs outs = Player textureEntry boundb (startX, startY) (Left DDown) mempty cc
+initPlayer cfgs outs = Player textureEntry hb (startX, startY) (Left DDown) mempty cc
     where
         charCfgs = characters cfgs ! mainCharName
         textureEntry = textures outs ! mainCharName
         hb = charHitBox charCfgs
-        boundb = bb (hitboxX1 hb) (hitboxY1 hb) (hitboxX2 hb) (hitboxY2 hb)
         cc = charMovement charCfgs
         startX = 0
         startY = 0
@@ -66,11 +65,11 @@ insertItems uniqs cm item positions = foldr (uncurry (insertItem item)) (mempty,
 
 insertItem :: Item -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
 insertItem item un (x, y) (im, cm) =
-    case getCollision (bb x  y  1  1) cm of
+    case getCollision (bb x  y  (x+1)  (y+1)) cm of
         [] ->
             let im' = M.insert un (ItemState item (Just (x, y))) im
                 t = itemTexture item
-                cm' = insert (bb x y (textureWidth t) (textureHeight t)) un cm
+                cm' = insert (bb x y (x+(textureWidth t)) (y+(textureHeight t))) un cm
             in (im', cm')
         _ -> (im, cm)
 
@@ -80,7 +79,7 @@ initBackground :: OutputHandles -> IO Background
 initBackground outs = do
     un <- newUnique
     let barrs = M.insert un ((pondX, pondY),  pond) mempty
-        cm = insert (bb pondX pondY (textureWidth pond) (textureHeight pond)) un mempty
+        cm = insert (bb pondX pondY (pondX + (textureWidth pond)) (pondY + (textureHeight pond))) un mempty
     return $ Background ((textures outs) ! "outside") 0 0 barrs cm
     where
         pondX = 150

@@ -6,6 +6,7 @@ module GameState.Collision.RTree
     , depth
     , lookup
     , getCollision
+    , getIntersections
     , delete
     ) where
 

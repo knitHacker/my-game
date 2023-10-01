@@ -9,8 +9,9 @@ module InputState
     ) where
 
 import qualified SDL
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Word (Word32)
+import Data.Time.Clock.System
 
 import Debug.Trace
 
@@ -55,21 +56,23 @@ moveInputPressed _ = False
 updateInput :: (InputRead m, MonadIO m) => m InputState
 updateInput = do
     input <- readInputState
+    time <- liftIO getSystemTime
     event <- SDL.pollEvent
+    let ts = div (systemNanoseconds time) 1000000
     case event of
-        (Just event) -> return $ payloadToIntent event
-        _ -> return $ input { inputRepeat = True }
+        (Just event) -> return $ payloadToIntent event ts
+        _ -> return $ input { inputRepeat = True, inputTimestamp = ts }
 
 
-payloadToIntent :: SDL.Event -> InputState
-payloadToIntent (SDL.Event ts SDL.QuitEvent) = InputState True Nothing False False False ts
-payloadToIntent (SDL.Event ts (SDL.KeyboardEvent k)) =
+payloadToIntent :: SDL.Event -> Word32 -> InputState
+payloadToIntent (SDL.Event _ SDL.QuitEvent) ts = InputState True Nothing False False False ts
+payloadToIntent (SDL.Event _ (SDL.KeyboardEvent k)) ts =
     case getKey k of
         Nothing -> InputState False Nothing False False False ts
         Just (r, Left EnterPress) -> InputState False Nothing True False r ts
         Just (r, Left EscapePress) -> InputState False Nothing False True r ts
         Just (r, Right d) -> InputState False (Just d) False False r ts
-payloadToIntent (SDL.Event ts _) = InputState False Nothing False False False ts
+payloadToIntent (SDL.Event _ _) ts = InputState False Nothing False False False ts
 
 
 getKey :: SDL.KeyboardEventData -> Maybe (Bool, Either KeyPress Direction)

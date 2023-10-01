@@ -72,7 +72,7 @@ class Monad m => GameStateRead m where
 
 data Player = Player
     { playerTexture :: TextureEntry
-    , playerHitBox :: BoundBox
+    , playerHitBoxes :: CharacterHitBoxes
     , playerPosition :: (Int, Int)
     , playerMovement :: Either Direction PlayerMovement
     , playerItems :: M.Map ItemType Int

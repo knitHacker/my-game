@@ -14,18 +14,20 @@ import GameState.Player
 import GameState.Types
 import GameState.Menu.PauseMenu
 
+import Debug.Trace
+
 updateArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
     | escapePressed inputs = GameMenu (initPauseMenu outs area) True
     | moveInputPressed inputs && playerStanding (gameStatePlayer area) = GameStateArea area False
-    | otherwise = GameStateArea (area'' { background = background' }) True
+    | otherwise = GameStateArea (area' { background = background' }) True
     where
         player = gameStatePlayer area
         back = background area
         (moved, player') = updatePlayer back inputs player
         area' = (area { gameStatePlayer = player' })
         area'' = undefined -- if moved then collisionCheck area player' else area'
-        background' = updateBackground cfgs (background area'') player'
+        background' = updateBackground cfgs (background area') player'
 
 
 updatePlayer :: Background -> InputState -> Player -> (Bool, Player)
@@ -33,22 +35,24 @@ updatePlayer back inputs player@(Player _ hb pos mv _ cfgs) =
     case (inputStateDirection inputs, mv) of
         (Nothing, Left _) -> (False, player)
         (Nothing, Right (PlayerMove d _ _)) -> (False, player { playerMovement = Left d})
-        (Just iDir, Right pm@(PlayerMove oldDir oldTs _))
-            | iDir == oldDir && ts - oldTs > rate -> undefined
+        (Just iDir, Left _) -> (True, movePlayer back player iDir ts 0 (newPos iDir))
+        (Just iDir, Right pm@(PlayerMove oldDir oldTs f))
+            | iDir == oldDir && (ts - oldTs) > rate -> (True, movePlayer back player iDir ts (mod (f + 1) 8) (newPos iDir))
             | iDir == oldDir ->  (False, player)
-            | otherwise -> (True, movePlayer back player iDir ts (newPos iDir))
--- player { playerPosition = newPos iDir, playerMovement = Right (PlayerMove iDir ts 0) })
+            | otherwise -> (True, movePlayer back player iDir ts 0 (newPos iDir))
     where
         ts = inputTimestamp inputs
         newPos newDir = newPosition back player newDir
         rate = stepRate $ playerCfgs player
 
 
-movePlayer :: Background -> Player -> Direction -> Word32 -> (Int, Int) -> Player
-movePlayer back player dir ts (newX, newY) = foldl movePlayer' (newX, newY) 
+movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
+movePlayer back player dir ts f (newX, newY) = player { playerMovement = Right (PlayerMove dir ts f), playerPosition = newPos}
     where
+        newPos = foldl movePlayer' (newX, newY) collisions
         (oldX, oldY) = playerPosition player
-        hb = playerHitBox player
+        hb = getBoundBox dir hitboxes
+        hitboxes = playerHitBoxes player
         oldPlayerBB = translate oldX oldY hb
         rtree = backCollisions back
         collisions = getIntersections movementBB rtree
@@ -56,7 +60,12 @@ movePlayer back player dir ts (newX, newY) = foldl movePlayer' (newX, newY)
         playerWidth = textureWidth playerT
         playerBB = translate newX newY hb
         movementBB = union oldPlayerBB playerBB
-        movePlayer' (x, y) (BB x1 y1 x2 y2) = undefined
+        movePlayer' (x, y) b@(BB x1 y1 x2 y2) =
+            case dir of
+                DUp -> (x, y + (y2 - y1))
+                DDown -> (x, y - (y2 - y1))
+                DLeft -> (x + (x2 - x1), y)
+                DRight -> (x - (x2 - x1), y)
 
 newPosition :: Background -> Player -> Direction -> (Int, Int)
 newPosition back player dir = (x'', y'')
