@@ -12,6 +12,10 @@
                 "file": "assets/images/main_character_sheet.png"
             },
             "charHitBox": {
+                "hitboxX1": 0,
+                "hitboxY1": 0,
+                "hitboxX2": 16,
+                "hitboxY2": 32,
                 "sideWidth": 16,
                 "frontWidth": 16,
                 "collideHeight": 4
@@ -28,6 +32,10 @@
                 "file": "assets/images/dog_character_sheet.png"
             },
             "charHitBox": {
+                "hitboxX1": 0,
+                "hitboxY1": 0,
+                "hitboxX2": 36,
+                "hitboxY2": 24,
                 "sideWidth": 36,
                 "frontWidth": 12,
                 "collideHeight": 4

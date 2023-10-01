@@ -13,6 +13,7 @@ import GameState.Collision.BoundBox
 import Prelude hiding (lookup)
 import Data.Maybe
 import Data.List (sortOn)
+import Data.Monoid (Monoid)
 
 import Debug.Trace
 
@@ -20,6 +21,14 @@ data RTree a =
       Empty
     | RTree (InRTree a)
     deriving (Show, Eq)
+
+instance Semigroup (RTree a) where
+    (<>) Empty t = t
+    (<>) t Empty = t
+    (<>) (RTree lt) (RTree rt) = RTree $ merge' lt rt
+
+instance Monoid (RTree a) where
+    mempty = Empty
 
 data InRTree a =
       Leaf BoundBox a
@@ -43,6 +52,14 @@ data TreeDelete a =
     | Orphans [(BoundBox, a)]
     | DTree (InRTree a)
     deriving (Show, Eq)
+
+merge' :: InRTree a -> InRTree a -> InRTree a
+merge' lt rt = insertAll' ltL rt'
+    where
+        ldepth = depth' lt
+        rdepth = depth' rt
+        (lt', rt') = if ldepth <= rdepth then (lt, rt) else (rt, lt)
+        ltL = toList' lt'
 
 getChildren :: TreeNode a -> [InRTree a]
 getChildren (RTNode2 c1 c2) = [c1, c2]
@@ -288,6 +305,20 @@ lookup'' b nt = foldr lkup Nothing cns
         cns = getChildren nt
         lkup _ j@(Just a) = j
         lkup t _ = lookup' b t
+
+
+getIntersections :: BoundBox -> RTree a -> [BoundBox]
+getIntersections _ Empty = []
+getIntersections bb (RTree t) = getIntersections' bb t
+
+getIntersections' :: BoundBox -> InRTree a -> [BoundBox]
+getIntersections' bb (Leaf bb' a) =
+    case intersect bb bb' of
+        (Just intersect) -> [intersect]
+        Nothing -> []
+getIntersections' bb (Node bb' nt)
+    | isJust $ intersect bb bb' = concat $ getIntersections' bb <$> getChildren nt
+    | otherwise = []
 
 
 getCollision :: BoundBox -> RTree a -> [a]

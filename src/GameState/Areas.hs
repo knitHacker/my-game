@@ -1,4 +1,4 @@
-module GameState.Area
+module GameState.Areas
     ( updateArea
     ) where
 
@@ -12,51 +12,51 @@ import GameState.Collision.BoundBox
 import GameState.Collision.RTree
 import GameState.Player
 import GameState.Types
+import GameState.Menu.PauseMenu
 
 updateArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
     | escapePressed inputs = GameMenu (initPauseMenu outs area) True
-    | moveInputPressed inputs && playerStanding (gameStatePlayer area) = GameState a False
+    | moveInputPressed inputs && playerStanding (gameStatePlayer area) = GameStateArea area False
     | otherwise = GameStateArea (area'' { background = background' }) True
     where
         player = gameStatePlayer area
-        (moved, player') = case (inputStateDirection inputs, playerMovement player) of
-            (Nothing, Left _) -> (False, player)
-            (Nothing, Right (d, _, _)) -> (False, player { playerMovement = Left d })
-            (Just dir, _) -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
+        back = background area
+        (moved, player') = updatePlayer back inputs player
         area' = (area { gameStatePlayer = player' })
-        area'' = if moved then collisionCheck area player' else area'
+        area'' = undefined -- if moved then collisionCheck area player' else area'
         background' = updateBackground cfgs (background area'') player'
 
 
-
 updatePlayer :: Background -> InputState -> Player -> (Bool, Player)
-updatePlayer back inputs p@(Player hb pos mv cfgs) =
+updatePlayer back inputs player@(Player _ hb pos mv _ cfgs) =
     case (inputStateDirection inputs, mv) of
-        (Nothing, Left) -> (False, p)
+        (Nothing, Left _) -> (False, player)
         (Nothing, Right (PlayerMove d _ _)) -> (False, player { playerMovement = Left d})
-        (Just iDir, Right pm@(PlayerMove _ _ _))
-            | newDir == oldDir && timeDiff > rate -> undefined
-            | newDir == oldDir ->  (False, player)
-            | otherwise -> player { playerPosition = newPosition back player dir, playerMovement = Right (dir, 0, 0) }
+        (Just iDir, Right pm@(PlayerMove oldDir oldTs _))
+            | iDir == oldDir && ts - oldTs > rate -> undefined
+            | iDir == oldDir ->  (False, player)
+            | otherwise -> (True, movePlayer back player iDir ts (newPos iDir))
+-- player { playerPosition = newPos iDir, playerMovement = Right (PlayerMove iDir ts 0) })
     where
-        timeDiff = ts - oldTs
-        newPos = newPosition newDir player
+        ts = inputTimestamp inputs
+        newPos newDir = newPosition back player newDir
         rate = stepRate $ playerCfgs player
 
 
-movePlayer :: Background -> Player -> Direction -> (Int, Int) -> Player
-movePlayer back player dir (newX, newY) = undefined
+movePlayer :: Background -> Player -> Direction -> Word32 -> (Int, Int) -> Player
+movePlayer back player dir ts (newX, newY) = foldl movePlayer' (newX, newY) 
     where
+        (oldX, oldY) = playerPosition player
+        hb = playerHitBox player
+        oldPlayerBB = translate oldX oldY hb
         rtree = backCollisions back
-        collisions = getCollision playerBB rtree
+        collisions = getIntersections movementBB rtree
         playerT = playerTexture player
         playerWidth = textureWidth playerT
-        x1 = newX
-        y2 = newY
-        y1 = y2 - collideHeight $ playerHitBox player
-        x2 = x1 + playerWidth -- collideWidth $ playerHitBox player
-        playerBB = bb x1 y1 x2 y2
+        playerBB = translate newX newY hb
+        movementBB = union oldPlayerBB playerBB
+        movePlayer' (x, y) (BB x1 y1 x2 y2) = undefined
 
 newPosition :: Background -> Player -> Direction -> (Int, Int)
 newPosition back player dir = (x'', y'')
@@ -65,8 +65,8 @@ newPosition back player dir = (x'', y'')
         charSizeY = textureHeight (playerTexture player)
         moveAmt = moveStep $ playerCfgs player
         (xMove, yMove) = updatePosition moveAmt dir
-        xMax = (textureWidth $ area back) - charSizeX
-        yMax = (textureHeight $ area back) - charSizeY
+        xMax = (textureWidth $ backArea back) - charSizeX
+        yMax = (textureHeight $ backArea back) - charSizeY
         xMin = 0
         yMin = 0
         (x, y) = playerPosition player
@@ -145,7 +145,6 @@ collisionCheck gs player =
                 cm' = deleteCollision (x, y, w, h, a) cm
                 player' = player { playerItems = (M.insertWith (+) (itemType (itemInfo item)) 1 (playerItems player)) }
             in (Right (items', cm', player'))
--}
 
 fixPlayerPosition :: Player -> Int -> Int -> Int -> Int -> Player
 fixPlayerPosition player x y w h =
@@ -170,3 +169,5 @@ fixPlayerPosition player x y w h =
                 In -> if p1 - b1 < b2 - p2 then (if isX then b1 - 1 - width else b1 - 1) else (if isX then b2 + 1 else b2 + 1 + width)
                 o -> p1
         whichSide playL playR l r = getOrder (playL, playR) (l, r)
+
+-}

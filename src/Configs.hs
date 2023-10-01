@@ -16,6 +16,7 @@ import Paths_my_game
 import GHC.Generics
 import Data.Aeson
 import Data.Either
+import Data.Word (Word32)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 
@@ -35,9 +36,10 @@ instance ToJSON TextureCfg
 instance FromJSON TextureCfg
 
 data HitBox = HitBox
-    { sideWidth :: Int
-    , frontWidth :: Int
-    , collideHeight :: Int
+    { hitboxX1 :: Int
+    , hitboxY1 :: Int
+    , hitboxX2 :: Int
+    , hitboxY2 :: Int
     } deriving (Generic, Show, Eq, Ord)
 
 instance ToJSON HitBox
@@ -45,7 +47,7 @@ instance FromJSON HitBox
 
 data CharacterMovement = CharacterMovement
     { moveStep :: Int
-    , stepRate :: Int
+    , stepRate :: Word32
     } deriving (Generic, Show, Eq, Ord)
 
 instance ToJSON CharacterMovement

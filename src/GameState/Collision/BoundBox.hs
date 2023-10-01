@@ -1,5 +1,5 @@
 module GameState.Collision.BoundBox
-    ( BoundBox
+    ( BoundBox(..)
     , bb
     , RPX(..)
     , RPY(..)
@@ -11,6 +11,7 @@ module GameState.Collision.BoundBox
     , intersect
     , relationship
     , overlap
+    , translate
     ) where
 
 
@@ -67,6 +68,8 @@ union (BB x1 y1 x2 y2) (BB x3 y3 x4 y4) = BB (min x1 x3) (min y1 y3) (max x2 x4)
 area :: BoundBox -> Int
 area (BB x1 y1 x2 y2) = (x2 - x1) * (y2 - y1)
 
+translate :: Int -> Int -> BoundBox -> BoundBox
+translate xMove yMove (BB x1 y1 x2 y2) = bb (xMove + x1) (yMove + y1) (xMove + x2) (yMove + y2)
 
 contains :: BoundBox -> BoundBox -> Bool
 contains (BB ox1 oy1 ox2 oy2) (BB ix1 iy1 ix2 iy2) = ox1 <= ix1 && oy1 <= iy1 && ix2 <= ox2 && iy2 <= oy2

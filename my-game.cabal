@@ -49,7 +49,7 @@ library
       Env.Types
       Game
       GameState
-      GameState.Area
+      GameState.Areas
       GameState.Areas.Outside
       GameState.Collision
       GameState.Collision.BoundBox

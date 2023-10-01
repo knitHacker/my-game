@@ -9,13 +9,13 @@ import Control.Monad
 import Configs
 import InputState
 import GameState.Types
+import GameState.Areas
 import GameState.Areas.Outside
 import GameState.Menu.MainMenu
 import GameState.Menu.PauseMenu
 import OutputHandles.Types
 import GameState.Collision.RTree
 import GameState.Collision.BoundBox
--- import GameState.Collision
 
 import qualified Data.Text as T
 import qualified SDL
@@ -45,7 +45,7 @@ randomPosition width height iW iH = do
 stopMoveDirection :: Player -> Player
 stopMoveDirection player = case playerMovement player of
     Left d -> player
-    Right (d, _, _) -> player { playerMovement = Left d }
+    Right (PlayerMove d  _ _) -> player { playerMovement = Left d }
 
 isGameExiting :: GameState -> Bool
 isGameExiting GameExiting = True
@@ -91,18 +91,6 @@ updateGameStateInMenu m cfgs inputs outs =
 
 
 updateGameStateInArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
-updateGameStateInArea outs _ (InputState _ _ _ True _) area = GameMenu (initPauseMenu outs area) True
-updateGameStateInArea _ _ (InputState _ Nothing _ _ _) a@(GameArea _ (Player _ _ _ (Left _) _ _) _ _ _) =
-    GameStateArea a False
-updateGameStateInArea _ cfgs inputs area = GameStateArea (area'' { background = background' }) True
-    where
-        player = gameStatePlayer area
-        (moved, player') = case (inputStateDirection inputs, playerMovement player) of
-            (Nothing, Left _) -> (False, player)
-            (Nothing, Right (d, _, _)) -> (False, player { playerMovement = Left d })
-            (Just dir, _) -> (True, updatePlayer (background area) (gameStatePlayer area) dir)
-        area' = (area { gameStatePlayer = player' })
-        area'' = if moved then collisionCheck area player' else area'
-        background' = updateBackground cfgs (background area'') player'
+updateGameStateInArea = updateArea
 
 
