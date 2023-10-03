@@ -88,7 +88,7 @@ loadAreaTextures cfgs r = do
 
 loadItemTextures :: Configs -> SDL.Renderer -> IO TextureMap
 loadItemTextures cfgs r = do
-    textures <- mapM (loadTexture r)  itemCfg
+    textures <- mapM (\(n, ic) -> loadTexture r (n, itemTextureEntry ic)) itemCfg
     return $ M.fromList textures
     where
         itemCfg = M.toList $ items cfgs

@@ -21,6 +21,9 @@ import Data.Map.Strict ((!))
 import Control.Monad.IO.Class
 import Data.Unique
 
+import GameState.Collision.BoundBox
+import GameState.Collision.RTree
+
 
 mainCharName :: T.Text
 mainCharName = "dog"
@@ -29,26 +32,30 @@ instance Show Unique where
     show = show . hashUnique
 
 
--- bad literals in code
 initPlayer :: Configs -> OutputHandles -> Player
-initPlayer cfgs outs = Player textureEntry bb (startX, startY) (Left DDown) mempty cc
+initPlayer cfgs outs = Player playCfgs playState
     where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown) mempty
         charCfgs = characters cfgs ! mainCharName
         textureEntry = textures outs ! mainCharName
-        bb = charHitBox charCfgs
+        hb = charHitBox charCfgs
         cc = charMovement charCfgs
         startX = 0
         startY = 0
 
-initItems :: OutputHandles -> Background -> ObjectMap -> CollisionMap Unique -> IO (ItemManager, ObjectMap, CollisionMap Unique)
-initItems outs back m cm = do
+initItems :: Configs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
+initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs m cm (Item mushroomEntry Mushroom) itemPos
+    return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
     where
-        mushroomEntry = textures outs ! "mushroom"
-        backT = area back
+        itemName = "mushroom"
+        mushroomEntry = textures outs ! itemName
+        hb = itemHitBox $ items cfgs ! itemName
+        bars = backCollisions back
+        backT = backArea back
         boardWidth = textureWidth backT
         boardHeight = textureHeight backT
         boardSize = boardWidth * boardHeight
@@ -57,29 +64,32 @@ initItems outs back m cm = do
         iW = textureWidth mushroomEntry
         iH = textureHeight mushroomEntry
 
-insertItems :: [Unique] -> ObjectMap -> CollisionMap Unique -> Item -> [(Int, Int)] -> (ItemManager, ObjectMap, CollisionMap Unique)
-insertItems uniqs m cm item positions = foldr (uncurry (insertItem item)) (mempty, m, cm) $ zip uniqs positions
+insertItems :: [Unique] -> RTree Unique -> RTree Unique -> Item -> [(Int, Int)] -> (ItemManager, RTree Unique)
+insertItems uniqs bars cm item positions = foldr (uncurry (insertItem item bars)) (mempty, cm) $ zip uniqs positions
 
-insertItem :: Item -> Unique -> (Int, Int) -> (ItemManager, ObjectMap, CollisionMap Unique) -> (ItemManager, ObjectMap, CollisionMap Unique)
-insertItem item un (x, y) (im, m, cm) =
-    case detectCollision (x, y, 1, 1) cm of
-        [] ->
-            let m' = M.insert un BoardItem m
-                im' = M.insert un (ItemState item (Just (x, y))) im
-                t = itemTexture item
-                cm' = insertCollision (x,y,textureWidth t,textureHeight t,un) cm
-            in (im', m', cm')
-        _ -> (im, m, cm)
+insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
+insertItem item bars un (x, y) (im, cm) =
+    case getCollision hb' bars of
+        [] -> case getCollision hb' cm of
+            [] ->
+                let im' = M.insert un (ItemState item (Just (x, y))) im
+                    t = itemTexture item
+                    cm' = insert hb' un cm
+                in (im', cm')
+            _ -> (im, cm)
+        _ -> (im, cm)
+    where
+        hb = itemHb item
+        hb' = translate x y hb
 
 
 -- bad literals in code
-initBackground :: OutputHandles -> IO (Background, ObjectMap, CollisionMap Unique)
+initBackground :: OutputHandles -> IO Background
 initBackground outs = do
     un <- newUnique
     let barrs = M.insert un ((pondX, pondY),  pond) mempty
-        om = M.insert un BoardBarrier mempty
-        cm = insertCollision (pondX, pondY, textureWidth pond, textureHeight pond, un) mempty
-    return (Background ((textures outs) ! "outside") 0 0 barrs, om, cm)
+        cm = insert (bb pondX pondY (pondX + (textureWidth pond)) (pondY + (textureHeight pond))) un mempty
+    return $ Background ((textures outs) ! "outside") 0 0 barrs cm
     where
         pondX = 150
         pondY = 100
@@ -89,14 +99,12 @@ initBackground outs = do
 
 initOutsideArea :: Configs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
-    (back, m, cm) <- initBackground outs
-    (im, m', cm') <- initItems outs back m cm
-    return $ GameArea back (initPlayer cfgs outs) im m' cm'
+    back <- initBackground outs
+    (im, cm) <- initItems cfgs outs back mempty
+    return $ GameArea back (initPlayer cfgs outs) im cm
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
     xPos <- randomValue 17 (width - iW)
     yPos <- randomValue 33 (height - iH)
     return (xPos, yPos)
-
-

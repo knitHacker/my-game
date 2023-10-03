@@ -26,10 +26,9 @@ drawBackground :: Draws -> Configs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
     where
         back = background gs
-        backArea = area back
-        t = texture backArea
-        xOff = xOffset back
-        yOff = yOffset back
+        t = texture $ backArea back
+        xOff = backXOffset back
+        yOff = backYOffset back
         xStart = fromIntegral xOff
         yStart = fromIntegral yOff
         boardWidth = fromIntegral $ boardSizeX cfgs
@@ -40,13 +39,13 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
 drawPlayer :: Draws -> GameArea -> Draws
 drawPlayer draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
-        textureEntry = playerTexture $ gameStatePlayer gs
+        textureEntry = playerTexture $ playerCfgs $ gameStatePlayer gs
         t = texture textureEntry
         pSizeX = fromIntegral $ textureWidth textureEntry
         pSizeY = fromIntegral $ textureHeight textureEntry
-        xOff = xOffset $ background gs
-        yOff = yOffset $ background gs
-        (xBoard, yBoard) = playerPosition $ gameStatePlayer gs
+        xOff = backXOffset $ background gs
+        yOff = backYOffset $ background gs
+        (xBoard, yBoard) = playerPosition $ playerState $ gameStatePlayer gs
         xPos = fromIntegral (xBoard - xOff)
         yPos = fromIntegral (yBoard - yOff)
         charRect = getCharacter $ gameStatePlayer gs
@@ -59,11 +58,11 @@ getCharacter player = mkRect xPos yPos width height
         yPos = charSizeY * entryY
         width = charSizeX
         height = charSizeY
-        charSizeX = fromIntegral $ textureWidth $ playerTexture player
-        charSizeY = fromIntegral $ textureHeight $ playerTexture player
-        (entryY, entryX) = case playerMovement player of
-            Left d -> (4, getDirectionNum d)
-            Right (d, _, f) -> (getDirectionNum d, fromIntegral f)
+        charSizeX = fromIntegral $ textureWidth $ playerTexture $ playerCfgs player
+        charSizeY = fromIntegral $ textureHeight $ playerTexture $ playerCfgs player
+        (entryY, entryX) = case playerAction $ playerState player of
+            PlayerStanding d -> (4, getDirectionNum d)
+            PlayerMoving (PlayerMove d _ f) -> (getDirectionNum d, fromIntegral f)
 
 -- TODO: change this to derive enum (change order on character sheet)
 getDirectionNum :: Direction -> CInt
@@ -76,14 +75,14 @@ drawItems :: Draws -> Configs -> GameArea -> Draws
 drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
-        xOff = xOffset back
-        yOff = yOffset back
+        xOff = backXOffset back
+        yOff = backYOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
 
 drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
-drawItem xStart yStart width height d (ItemState (Item tE _) (Just (xPos, yPos)))
+drawItem xStart yStart width height d (ItemState (Item tE _ _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (bottom, 2, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
@@ -103,8 +102,8 @@ drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
                                      (M.elems (backBarriers (background area)))
     where
         back = background area
-        xOff = xOffset back
-        yOff = yOffset back
+        xOff = backXOffset back
+        yOff = backYOffset back
 
 drawBarrier :: Int -> Int -> Draws -> ((Int, Int), TextureEntry) -> Draws
 drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d

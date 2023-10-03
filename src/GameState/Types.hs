@@ -6,30 +6,30 @@ module GameState.Types
     , MenuAction(..)
     , MenuCursor(..)
     , Player(..)
+    , PlayerAction(..)
+    , PlayerState(..)
+    , PlayerConfig(..)
+    , PlayerMovement(..)
     , ItemManager
     , Item(..)
-    , ItemType(..)
     , ItemState(..)
     , Background(..)
-    , BoardObject(..)
-    , ObjectMap
-    , getItemDimensions
-    , getDirection
     ) where
 
 import Control.Monad
 import Control.Monad.IO.Class
 import qualified Data.Map.Strict as M
 import Data.Unique
+import Data.Word
+import qualified Data.Text as T
 
 import Configs
 import InputState
 import OutputHandles.Types
-import GameState.Collision
+import GameState.Collision.RTree
+import GameState.Collision.BoundBox
 
 import Utils
-
-type ObjectMap = M.Map Unique BoardObject
 
 
 data GameState =
@@ -43,6 +43,17 @@ data MenuAction =
     | GameExit
     | GameContinue GameArea
     | GameStartMenu
+
+data PlayerAction =
+    PlayerStanding Direction
+    | PlayerMoving PlayerMovement
+    deriving (Show, Eq)
+
+data PlayerMovement = PlayerMove
+    { playerDirection :: Direction
+    , lastMoveTimestamp :: Word32
+    , animationFrame :: Int
+    } deriving (Show, Eq)
 
 data Menu = Menu
     { texts :: [TextDisplay]
@@ -59,48 +70,35 @@ data GameArea = GameArea
     { background :: Background
     , gameStatePlayer :: Player
     , gameStateItemManager :: ItemManager
-    , collisionObjects :: ObjectMap
-    , collisionMap :: CollisionMap Unique
+    , collisionMap :: RTree Unique -- TODO: move this into ItemManager probably
     }
-
-
-data BoardObject =
-      BoardItem
-    | BoardBarrier
 
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState
 
+data PlayerConfig = PlayerCfg
+    { playerTexture :: TextureEntry
+    , playerHitBoxes :: CharacterHitBoxes
+    , playerMoveCfgs :: CharacterMovement
+    }
 
-getDirection :: Player -> Direction
-getDirection p = case playerMovement p of
-    Left d -> d
-    Right (d, _, _) -> d
+data PlayerState = PlayerState
+    { playerPosition :: (Int, Int)
+    , playerAction :: PlayerAction
+    , playerItems :: M.Map T.Text Int
+    }
 
 data Player = Player
-    { playerTexture :: TextureEntry
-    , playerHitBox :: HitBox
-    , playerPosition :: (Int, Int)
-    , playerMovement :: Either Direction (Direction, Int, Int)
-    , playerItems :: M.Map ItemType Int
-    , playerCfgs :: CharacterMovement
+    { playerCfgs :: PlayerConfig
+    , playerState :: PlayerState
     }
 
 
-data ItemType = Mushroom deriving (Show, Eq, Ord)
-
-getItemDimensions :: ItemState -> (Int, Int, Int, Int)
-getItemDimensions (ItemState item pos) =
-    case pos of
-        Just (x, y) -> (x, y, textureWidth t, textureHeight t)
-        Nothing -> (0, 0, textureWidth t, textureHeight t)
-    where
-        t = itemTexture item
-
 data Item = Item
     { itemTexture :: TextureEntry
-    , itemType :: ItemType
+    , itemHb :: BoundBox
+    , itemType :: T.Text
     }
 
 instance Show Item where
@@ -115,8 +113,9 @@ type ItemManager = M.Map Unique ItemState
 
 
 data Background = Background
-    { area :: TextureEntry
-    , xOffset :: Int
-    , yOffset :: Int
+    { backArea :: TextureEntry
+    , backXOffset :: Int
+    , backYOffset :: Int
     , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
+    , backCollisions :: RTree Unique
     }
