@@ -51,7 +51,7 @@ initItems cfgs outs back cm = do
     uniqs <- replicateM numberOfItems newUnique
     return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
     where
-        itemName = "mushroom"
+        itemName = "fern"
         mushroomEntry = textures outs ! itemName
         hb = itemHitBox $ items cfgs ! itemName
         bars = backCollisions back

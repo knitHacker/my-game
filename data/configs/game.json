@@ -1,7 +1,7 @@
 {
     "debug": true,
-    "windowSizeX": 1000,
-    "windowSizeY": 800,
+    "windowSizeX": 1200,
+    "windowSizeY": 1000,
     "boardSizeX": 250,
     "boardSizeY": 250,
     "characters": {
@@ -26,7 +26,7 @@
                 }
             },
             "charMovement": {
-                "moveStep": 5,
+                "moveStep": 4,
                 "stepRate": 75
             }
         },
@@ -51,7 +51,7 @@
                 }
             },
             "charMovement": {
-                "moveStep": 5,
+                "moveStep": 4,
                 "stepRate": 75
             }
         }
@@ -96,6 +96,20 @@
                 "x2": 16,
                 "y2": 16
             }
+        },
+        "fern": {
+            "itemTextureEntry": {
+                "sizeX": 16,
+                "sizeY": 16,
+                "file": "assets/images/fern.png"
+            },
+            "itemHitBox": {
+                "x1": 0,
+                "y1": 15,
+                "x2": 16,
+                "y2": 16
+            }
         }
+
     }
 }
