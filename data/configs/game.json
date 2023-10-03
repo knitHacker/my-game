@@ -14,13 +14,13 @@
             "charHitBox": {
                 "frontHitbox": {
                     "x1": 0,
-                    "y1": 0,
+                    "y1": 28,
                     "x2": 16,
                     "y2": 32
                 },
                 "sideHitbox": {
                     "x1": 0,
-                    "y1": 0,
+                    "y1": 28,
                     "x2": 16,
                     "y2": 32
                 }
@@ -44,9 +44,9 @@
                     "y2": 24
                 },
                 "sideHitbox": {
-                    "x1": 1,
+                    "x1": 6,
                     "y1": 20,
-                    "x2": 35,
+                    "x2": 30,
                     "y2": 24
                 }
             },
@@ -72,14 +72,30 @@
     },
     "items": {
         "mushroom": {
-            "sizeX": 6,
-            "sizeY": 6,
-            "file": "assets/images/mushroom.png"
+            "itemTextureEntry": {
+                "sizeX": 6,
+                "sizeY": 6,
+                "file": "assets/images/mushroom.png"
+            },
+            "itemHitBox": {
+                "x1": 0,
+                "y1": 5,
+                "x2": 6,
+                "y2": 6
+            }
         },
         "lavender": {
-            "sizeX": 16,
-            "sizeY": 16,
-            "file": "assets/images/lavender.png"
+            "itemTextureEntry": {
+                "sizeX": 16,
+                "sizeY": 16,
+                "file": "assets/images/lavender.png"
+            },
+            "itemHitBox": {
+                "x1": 0,
+                "y1": 15,
+                "x2": 16,
+                "y2": 16
+            }
         }
     }
 }

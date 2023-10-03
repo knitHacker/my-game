@@ -6,6 +6,7 @@ module Configs
     , initConfigs
     , ConfigsRead(..)
     , TextureCfg(..)
+    , ItemCfg(..)
     , CharacterCfg(..)
     , CharacterMovement(..)
     , CharacterHitBoxes(..)
@@ -41,24 +42,9 @@ instance FromJSON TextureCfg
 data CharacterHitBoxes = CharHB
     { frontHitbox :: BoundBox
     , sideHitbox :: BoundBox
-    } deriving (Show, Eq, Ord)
+    } deriving (Generic, Show, Eq, Ord)
 
-instance FromJSON CharacterHitBoxes where
-    parseJSON (Object o) = do
-        frontB <- o .: "frontHitbox"
-        sideB <- o .: "sideHitbox"
-        let parseBB hb = do
-                x1 <- hb .: "x1"
-                y1 <- hb .: "y1"
-                x2 <- hb .: "x2"
-                y2 <- hb .: "y2"
-                return $ bb x1 y1 x2 y2
-        fBB <- parseBB frontB
-        sBB <- parseBB sideB
-        return $ CharHB fBB sBB
-
-    parseJSON invalid = prependFailure "parsing CharHB failed, "
-            (typeMismatch "Object" invalid)
+instance FromJSON CharacterHitBoxes
 
 data CharacterMovement = CharacterMovement
     { moveStep :: Int
@@ -76,6 +62,13 @@ data CharacterCfg = CharacterCfg
 instance FromJSON CharacterCfg
 
 
+data ItemCfg = ItemCfg
+    { itemTextureEntry :: TextureCfg
+    , itemHitBox :: BoundBox
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON ItemCfg
+
 data Configs = Configs
     { debug :: Bool
     , boardSizeX :: Int
@@ -84,7 +77,7 @@ data Configs = Configs
     , windowSizeY :: Int
     , characters :: M.Map T.Text CharacterCfg
     , areas :: M.Map T.Text TextureCfg
-    , items :: M.Map T.Text TextureCfg
+    , items :: M.Map T.Text ItemCfg
     , barriers :: M.Map T.Text TextureCfg
     } deriving (Generic, Show, Eq)
 

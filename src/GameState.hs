@@ -41,12 +41,6 @@ randomPosition width height iW iH = do
     yPos <- randomValue 33 (height - iH)
     return (xPos, yPos)
 
-
-stopMoveDirection :: Player -> Player
-stopMoveDirection player = case playerMovement player of
-    Left d -> player
-    Right (PlayerMove d  _ _) -> player { playerMovement = Left d }
-
 isGameExiting :: GameState -> Bool
 isGameExiting GameExiting = True
 isGameExiting _ = False

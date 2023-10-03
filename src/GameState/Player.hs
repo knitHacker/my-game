@@ -2,6 +2,7 @@ module GameState.Player
     ( playerStanding
     , getDirection
     , getBoundBox
+    , getPlayerHitbox
     ) where
 
 
@@ -12,14 +13,23 @@ import Configs
 
 
 playerStanding :: Player -> Bool
-playerStanding (Player _ _ _ (Left _) _ _) = True
-playerStanding _ = False
+playerStanding player =
+    case playerAction (playerState player) of
+        PlayerStanding _ -> True
+        _ -> False
 
 
 getDirection :: Player -> Direction
-getDirection p = case playerMovement p of
-    Left d -> d
-    Right (PlayerMove d _ _) -> d
+getDirection p = case playerAction (playerState p) of
+    PlayerStanding d -> d
+    PlayerMoving (PlayerMove d _ _) -> d
+
+getPlayerHitbox :: Player -> BoundBox
+getPlayerHitbox p@(Player cfg state) = translate x y hb
+    where
+        dir = getDirection p
+        hb = getBoundBox dir $ playerHitBoxes cfg
+        (x, y) = playerPosition state
 
 
 getBoundBox :: Direction -> CharacterHitBoxes -> BoundBox

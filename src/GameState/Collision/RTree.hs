@@ -6,6 +6,7 @@ module GameState.Collision.RTree
     , depth
     , lookup
     , getCollision
+    , getCollisionBB
     , getIntersections
     , delete
     ) where
@@ -319,6 +320,22 @@ getIntersections' bb (Leaf bb' a) =
         Nothing -> []
 getIntersections' bb (Node bb' nt)
     | isJust $ intersect bb bb' = concat $ getIntersections' bb <$> getChildren nt
+    | otherwise = []
+
+
+
+getCollisionBB :: BoundBox -> RTree a -> [(BoundBox, a)]
+getCollisionBB _ Empty = []
+getCollisionBB bb (RTree t) = getCollisionBB' bb t
+
+getCollisionBB' :: BoundBox -> InRTree a -> [(BoundBox, a)]
+getCollisionBB' bb (Leaf bb' a)
+    | isJust $ intersect bb bb' = [(bb', a)]
+    | otherwise = []
+    where
+        rel = relationship bb bb'
+getCollisionBB' bb (Node bb' nt)
+    | isJust $ intersect bb bb' = concat $ getCollisionBB' bb <$> getChildren nt
     | otherwise = []
 
 

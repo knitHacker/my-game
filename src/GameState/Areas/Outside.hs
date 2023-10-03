@@ -32,10 +32,11 @@ instance Show Unique where
     show = show . hashUnique
 
 
--- bad literals in code
 initPlayer :: Configs -> OutputHandles -> Player
-initPlayer cfgs outs = Player textureEntry hb (startX, startY) (Left DDown) mempty cc
+initPlayer cfgs outs = Player playCfgs playState
     where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown) mempty
         charCfgs = characters cfgs ! mainCharName
         textureEntry = textures outs ! mainCharName
         hb = charHitBox charCfgs
@@ -43,14 +44,17 @@ initPlayer cfgs outs = Player textureEntry hb (startX, startY) (Left DDown) memp
         startX = 0
         startY = 0
 
-initItems :: OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
-initItems outs back cm = do
+initItems :: Configs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
+initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs cm (Item mushroomEntry Mushroom) itemPos
+    return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
     where
-        mushroomEntry = textures outs ! "mushroom"
+        itemName = "mushroom"
+        mushroomEntry = textures outs ! itemName
+        hb = itemHitBox $ items cfgs ! itemName
+        bars = backCollisions back
         backT = backArea back
         boardWidth = textureWidth backT
         boardHeight = textureHeight backT
@@ -60,18 +64,23 @@ initItems outs back cm = do
         iW = textureWidth mushroomEntry
         iH = textureHeight mushroomEntry
 
-insertItems :: [Unique] -> RTree Unique -> Item -> [(Int, Int)] -> (ItemManager, RTree Unique)
-insertItems uniqs cm item positions = foldr (uncurry (insertItem item)) (mempty, cm) $ zip uniqs positions
+insertItems :: [Unique] -> RTree Unique -> RTree Unique -> Item -> [(Int, Int)] -> (ItemManager, RTree Unique)
+insertItems uniqs bars cm item positions = foldr (uncurry (insertItem item bars)) (mempty, cm) $ zip uniqs positions
 
-insertItem :: Item -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
-insertItem item un (x, y) (im, cm) =
-    case getCollision (bb x  y  (x+1)  (y+1)) cm of
-        [] ->
-            let im' = M.insert un (ItemState item (Just (x, y))) im
-                t = itemTexture item
-                cm' = insert (bb x y (x+(textureWidth t)) (y+(textureHeight t))) un cm
-            in (im', cm')
+insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
+insertItem item bars un (x, y) (im, cm) =
+    case getCollision hb' bars of
+        [] -> case getCollision hb' cm of
+            [] ->
+                let im' = M.insert un (ItemState item (Just (x, y))) im
+                    t = itemTexture item
+                    cm' = insert hb' un cm
+                in (im', cm')
+            _ -> (im, cm)
         _ -> (im, cm)
+    where
+        hb = itemHb item
+        hb' = translate x y hb
 
 
 -- bad literals in code
@@ -91,7 +100,7 @@ initBackground outs = do
 initOutsideArea :: Configs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
     back <- initBackground outs
-    (im, cm) <- initItems outs back mempty
+    (im, cm) <- initItems cfgs outs back mempty
     return $ GameArea back (initPlayer cfgs outs) im cm
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
@@ -99,5 +108,3 @@ randomPosition width height iW iH = do
     xPos <- randomValue 17 (width - iW)
     yPos <- randomValue 33 (height - iH)
     return (xPos, yPos)
-
-
