@@ -5,12 +5,7 @@
     "boardSizeX": 250,
     "boardSizeY": 250,
     "characters": {
-        "main": {
-            "charTexture": {
-                "sizeX": 16,
-                "sizeY": 32,
-                "file": "assets/images/main_character_sheet.png"
-            },
+        "main_character": {
             "charHitBox": {
                 "frontHitbox": {
                     "x1": 0,
@@ -31,11 +26,6 @@
             }
         },
         "dog": {
-            "charTexture": {
-                "sizeX": 36,
-                "sizeY": 24,
-                "file": "assets/images/dog_character_sheet.png"
-            },
             "charHitBox": {
                 "frontHitbox": {
                     "x1": 12,
@@ -58,25 +48,26 @@
     },
     "areas": {
         "outside": {
-            "sizeX": 400,
-            "sizeY": 300,
-            "file": "assets/images/outside.png"
+            "barriers": {
+                "pond": {
+                    "x": 150,
+                    "y": 100
+                }
+            }
         }
     },
-    "barriers": {
+    "barrier_definitions": {
         "pond": {
-            "sizeX": 80,
-            "sizeY": 80,
-            "file": "assets/images/pond.png"
+            "mainHitBox": {
+                "x1": 0,
+                "y1": 0,
+                "x2": 80,
+                "y2": 80
+            }
         }
     },
     "items": {
         "mushroom": {
-            "itemTextureEntry": {
-                "sizeX": 6,
-                "sizeY": 6,
-                "file": "assets/images/mushroom.png"
-            },
             "itemHitBox": {
                 "x1": 0,
                 "y1": 5,
@@ -85,11 +76,6 @@
             }
         },
         "lavender": {
-            "itemTextureEntry": {
-                "sizeX": 16,
-                "sizeY": 16,
-                "file": "assets/images/lavender.png"
-            },
             "itemHitBox": {
                 "x1": 0,
                 "y1": 15,
@@ -98,11 +84,6 @@
             }
         },
         "fern": {
-            "itemTextureEntry": {
-                "sizeX": 16,
-                "sizeY": 16,
-                "file": "assets/images/fern.png"
-            },
             "itemHitBox": {
                 "x1": 0,
                 "y1": 15,
@@ -110,6 +91,5 @@
                 "y2": 16
             }
         }
-
     }
 }

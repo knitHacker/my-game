@@ -22,7 +22,7 @@ import InputState
 
 import Debug.Trace
 
-drawBackground :: Draws -> Configs -> GameArea -> Draws
+drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
     where
         back = background gs
@@ -71,7 +71,7 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: Draws -> Configs -> GameArea -> Draws
+drawItems :: Draws -> GameConfigs -> GameArea -> Draws
 drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
     where
         back = background gs
@@ -96,7 +96,7 @@ drawItem xStart yStart width height d (ItemState (Item tE _ _) (Just (xPos, yPos
         bottom = yPos' + h
 
 
-drawBarriers :: Draws -> Configs -> GameArea -> Draws
+drawBarriers :: Draws -> GameConfigs -> GameArea -> Draws
 drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
                                      draws
                                      (M.elems (backBarriers (background area)))
@@ -127,7 +127,7 @@ updateWindow = do
         _ -> return $ Just $ ToRender M.empty []
 
 
-updateAreaWindow :: Configs -> GameArea -> ToRender
+updateAreaWindow :: GameConfigs -> GameArea -> ToRender
 updateAreaWindow cfgs area = ToRender draws''' []
     where
         draws = drawBackground mempty cfgs area

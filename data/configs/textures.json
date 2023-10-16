@@ -1,0 +1,37 @@
+{
+    "main_character": {
+        "sizeX": 16,
+        "sizeY": 32,
+        "file": "assets/images/main_character_sheet.png"
+    },
+    "dog": {
+        "sizeX": 36,
+        "sizeY": 24,
+        "file": "assets/images/dog_character_sheet.png"
+    },
+    "outside": {
+        "sizeX": 400,
+        "sizeY": 300,
+        "file": "assets/images/outside.png"
+    },
+    "pond": {
+        "sizeX": 80,
+        "sizeY": 80,
+        "file": "assets/images/pond.png"
+    },
+    "mushroom": {
+        "sizeX": 6,
+        "sizeY": 6,
+        "file": "assets/images/mushroom.png"
+    },
+    "lavender": {
+        "sizeX": 16,
+        "sizeY": 16,
+        "file": "assets/images/lavender.png"
+    },
+    "fern": {
+        "sizeX": 16,
+        "sizeY": 16,
+        "file": "assets/images/fern.png"
+    }
+}

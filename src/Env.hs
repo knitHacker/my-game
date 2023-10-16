@@ -17,7 +17,7 @@ import GameState
 import Control.Monad.Reader     (runReaderT)
 
 
-initAppEnvData :: Configs -> OutputHandles -> IO AppEnvData
+initAppEnvData :: GameConfigs -> OutputHandles -> IO AppEnvData
 initAppEnvData cfgs outs = do
     inputs <- initInputState
     game <- initGameState cfgs outs

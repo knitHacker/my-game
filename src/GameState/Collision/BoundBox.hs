@@ -66,6 +66,12 @@ instance FromJSON BoundBox where
     parseJSON invalid = prependFailure "parsing BoundBox failed, "
             (typeMismatch "Object" invalid)
 
+instance ToJSON BoundBox where
+    toJSON (BB x1 y1 x2 y2) = object [ "x1" .= x1
+                                     , "y1" .= y1
+                                     , "x2" .= x2
+                                     , "y2" .= y2
+                                     ]
 
 bb :: Int -> Int -> Int -> Int -> BoundBox
 bb x1 y1 x2 y2 = BB xS yS xE yE

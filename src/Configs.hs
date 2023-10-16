@@ -3,6 +3,7 @@
 
 module Configs
     ( Configs(..)
+    , GameConfigs(..)
     , initConfigs
     , ConfigsRead(..)
     , TextureCfg(..)
@@ -10,6 +11,9 @@ module Configs
     , CharacterCfg(..)
     , CharacterMovement(..)
     , CharacterHitBoxes(..)
+    , AreaCfg(..)
+    , PositionCfg(..)
+    , BarrierCfg(..)
     ) where
 
 import Control.Monad
@@ -30,6 +34,11 @@ configFile :: FilePath
 configFile = "data/configs/game.json"
 
 
+texturesFile :: FilePath
+texturesFile = "data/configs/textures.json"
+
+
+
 data TextureCfg = TextureCfg
     { sizeX :: Int
     , sizeY :: Int
@@ -37,6 +46,7 @@ data TextureCfg = TextureCfg
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON TextureCfg
+instance ToJSON TextureCfg
 
 
 data CharacterHitBoxes = CharHB
@@ -45,6 +55,8 @@ data CharacterHitBoxes = CharHB
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON CharacterHitBoxes
+instance ToJSON CharacterHitBoxes
+
 
 data CharacterMovement = CharacterMovement
     { moveStep :: Int
@@ -52,50 +64,90 @@ data CharacterMovement = CharacterMovement
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON CharacterMovement
+instance ToJSON CharacterMovement
+
 
 data CharacterCfg = CharacterCfg
-    { charTexture :: TextureCfg
-    , charHitBox :: CharacterHitBoxes
+    { charHitBox :: CharacterHitBoxes
     , charMovement :: CharacterMovement
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON CharacterCfg
+instance ToJSON CharacterCfg
 
 
 data ItemCfg = ItemCfg
-    { itemTextureEntry :: TextureCfg
-    , itemHitBox :: BoundBox
+    { itemHitBox :: BoundBox
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON ItemCfg
+instance ToJSON ItemCfg
 
-data Configs = Configs
+data PositionCfg = PosCfg
+    { x :: Int
+    , y :: Int
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON PositionCfg
+instance ToJSON PositionCfg
+
+data AreaCfg = AreaCfg
+    { barriers :: M.Map T.Text PositionCfg
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON AreaCfg
+instance ToJSON AreaCfg
+
+data BarrierCfg = BarrierCfg
+    { mainHitBox :: BoundBox
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON BarrierCfg
+instance ToJSON BarrierCfg
+
+
+data GameConfigs = GameConfigs
     { debug :: Bool
     , boardSizeX :: Int
     , boardSizeY :: Int
     , windowSizeX :: Int
     , windowSizeY :: Int
     , characters :: M.Map T.Text CharacterCfg
-    , areas :: M.Map T.Text TextureCfg
+    , areas :: M.Map T.Text AreaCfg
+    , barrier_definitions :: M.Map T.Text BarrierCfg
     , items :: M.Map T.Text ItemCfg
-    , barriers :: M.Map T.Text TextureCfg
     } deriving (Generic, Show, Eq)
 
 
+instance FromJSON GameConfigs
+instance ToJSON GameConfigs
+
+
+data Configs = Configs
+    { textureCfgs :: M.Map T.Text TextureCfg
+    , gameCfgs :: GameConfigs
+    } deriving (Generic, Show, Eq)
+
 instance FromJSON Configs
+instance ToJSON Configs
+
 
 initConfigs :: IO Configs
 initConfigs = do
-    path <- getGameFullPath configFile
-    configsM <- eitherDecodeFileStrict path
-    -- print configsM
+    gPath <- getGameFullPath configFile
+    configsM <- eitherDecodeFileStrict gPath
     case configsM of
         Left err -> error ("Failed to parse config file: " ++ (show err))
-        Right configs -> return configs
+        Right configs -> do
+            tPath <- getGameFullPath texturesFile
+            texturesM <- eitherDecodeFileStrict tPath
+            case texturesM of
+                Left err -> error ("Failed to parse texture file: " ++ (show err))
+                Right textures -> return $ Configs textures configs
 
 
 class Monad m => ConfigsRead m where
-    readConfigs :: m Configs
+    readConfigs :: m GameConfigs
 
     debugMode :: m Bool
     debugMode = do

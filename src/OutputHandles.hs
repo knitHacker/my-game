@@ -51,17 +51,17 @@ initOutputHandles cfgs = do
     -- clears the screen
     initWindow r
     font <- Font.load fontPath 12
-    textures <- loadAreaTextures cfgs r
-    itemTextures <- loadItemTextures cfgs r
-    barrierTextures <- loadBarrierTextures cfgs r
-    textures' <- loadCharTextures (M.union (M.union textures itemTextures) barrierTextures) cfgs r
-    -- print $ fst <$> M.toList textures'
-    return $ OutputHandles window r textures' font ratioX ratioY
+    textList <- mapM (loadTexture r) $ M.toList textCfgs
+    let textures = M.fromList textList
+    print $ fst <$> M.toList textures
+    return $ OutputHandles window r textures font ratioX ratioY
     where
-        screenWidth = fromIntegral $ windowSizeX cfgs
-        screenHeight = fromIntegral $ windowSizeY cfgs
-        boardX = fromIntegral $ boardSizeX cfgs
-        boardY = fromIntegral $ boardSizeY cfgs
+        textCfgs = textureCfgs cfgs
+        gCfgs = gameCfgs cfgs
+        screenWidth = fromIntegral $ windowSizeX gCfgs
+        screenHeight = fromIntegral $ windowSizeY gCfgs
+        boardX = fromIntegral $ boardSizeX gCfgs
+        boardY = fromIntegral $ boardSizeY gCfgs
         ratioX = fromIntegral screenWidth / fromIntegral boardX
         ratioY = fromIntegral screenHeight / fromIntegral boardY
 
@@ -70,38 +70,6 @@ loadTexture r (name, textureCfg) = do
     path <- getGameFullPath $ file textureCfg
     t <- SDL.Image.loadTexture r path
     return (name, TextureEntry (sizeX textureCfg) (sizeY textureCfg) t)
-
-loadCharTextures :: TextureMap -> Configs -> SDL.Renderer -> IO TextureMap
-loadCharTextures tm cfgs r = do
-    textures <- mapM (loadTexture r . (charTexture <$>)) charCfg
-    return $ M.union tm $ M.fromList textures
-    where
-        charCfg = M.toList $ characters cfgs
-
-
-loadAreaTextures :: Configs -> SDL.Renderer -> IO TextureMap
-loadAreaTextures cfgs r = do
-    textures <- mapM (loadTexture r) areasCfg
-    return $ M.fromList textures
-    where
-        areasCfg = M.toList $ areas cfgs
-
-loadItemTextures :: Configs -> SDL.Renderer -> IO TextureMap
-loadItemTextures cfgs r = do
-    textures <- mapM (\(n, ic) -> loadTexture r (n, itemTextureEntry ic)) itemCfg
-    return $ M.fromList textures
-    where
-        itemCfg = M.toList $ items cfgs
-
-
-loadBarrierTextures :: Configs -> SDL.Renderer -> IO TextureMap
-loadBarrierTextures cfgs r = do
-    textures <- mapM (loadTexture r) barrierCfg
-    return $ M.fromList textures
-    where
-        barrierCfg = M.toList $ barriers cfgs
-
-
 
 cleanupOutputHandles :: OutputHandles -> IO ()
 cleanupOutputHandles outs = do

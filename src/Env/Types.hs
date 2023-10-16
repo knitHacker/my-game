@@ -20,7 +20,7 @@ import Control.Monad.IO.Class        (MonadIO)
 
 
 data AppEnvData = AppEnvData
-    { appEnvDataConfigs :: Configs
+    { appEnvDataConfigs :: GameConfigs
     , appEnvDataOutputHandles :: OutputHandles
     , appEnvDataInputState :: InputState
     , appEnvDataGameState :: GameState
@@ -45,7 +45,7 @@ instance InputRead AppEnv where
     readInputState = asks appEnvDataInputState
 
 instance ConfigsRead AppEnv where
-    readConfigs :: AppEnv Configs
+    readConfigs :: AppEnv GameConfigs
     readConfigs = asks appEnvDataConfigs
 
 instance GameStateRead AppEnv where

@@ -30,7 +30,7 @@ import Data.Unique
 
 import Debug.Trace
 
-initGameState :: Configs -> OutputHandles -> IO GameState
+initGameState :: GameConfigs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
 --    area <- initOutsideArea cfgs outs
     return $ GameMenu (initMainMenu outs) True
@@ -66,7 +66,7 @@ decrementMenuCursor :: Menu -> Menu
 decrementMenuCursor m@(Menu _ _ c@(MenuCursor 0 _)) = m
 decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos = p - 1 }}
 
-updateGameStateInMenu :: Menu -> Configs -> InputState -> OutputHandles -> IO GameState
+updateGameStateInMenu :: Menu -> GameConfigs -> InputState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs outs =
     if inputStateEnter inputs && not (inputRepeat inputs)
         then case (options m !! curPos) of
@@ -84,7 +84,7 @@ updateGameStateInMenu m cfgs inputs outs =
         curPos = cursorPos $ cursor m
 
 
-updateGameStateInArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
+updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateGameStateInArea = updateArea
 
 

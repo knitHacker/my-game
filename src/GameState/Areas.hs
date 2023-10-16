@@ -17,7 +17,7 @@ import GameState.Menu.PauseMenu
 
 import Debug.Trace
 
-updateArea :: OutputHandles -> Configs -> InputState -> GameArea -> GameState
+updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
     | escapePressed inputs = GameMenu (initPauseMenu outs area) True
     | moveInputPressed inputs && playerStanding (gameStatePlayer area) = GameStateArea area False
@@ -92,7 +92,7 @@ updatePosition m DDown = (0, m)
 updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
-updateBackground :: Configs -> Background -> Player -> Background
+updateBackground :: GameConfigs -> Background -> Player -> Background
 updateBackground cfgs back player = back { backXOffset = getOffset playerX windowX xMax
                                          , backYOffset = getOffset playerY windowY yMax
                                          }

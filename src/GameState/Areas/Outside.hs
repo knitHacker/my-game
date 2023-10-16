@@ -32,7 +32,7 @@ instance Show Unique where
     show = show . hashUnique
 
 
-initPlayer :: Configs -> OutputHandles -> Player
+initPlayer :: GameConfigs -> OutputHandles -> Player
 initPlayer cfgs outs = Player playCfgs playState
     where
         playCfgs = PlayerCfg textureEntry hb cc
@@ -44,7 +44,7 @@ initPlayer cfgs outs = Player playCfgs playState
         startX = 0
         startY = 0
 
-initItems :: Configs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
+initItems :: GameConfigs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
 initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
@@ -97,7 +97,7 @@ initBackground outs = do
         pond = textures outs ! "pond"
 
 
-initOutsideArea :: Configs -> OutputHandles -> IO GameArea
+initOutsideArea :: GameConfigs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
     back <- initBackground outs
     (im, cm) <- initItems cfgs outs back mempty
