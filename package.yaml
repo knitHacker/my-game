@@ -22,6 +22,7 @@ data-files:
 - assets/images/mushroom.png
 - assets/images/lavender.png
 - assets/images/pond.png
+- assets/images/arrow.png
 - assets/fonts/InsightSansSSi.ttf
 
 # Metadata used when publishing your package

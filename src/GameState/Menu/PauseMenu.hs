@@ -9,9 +9,9 @@ import OutputHandles.Types
 import GameState.Types
 
 initPauseMenu :: OutputHandles -> GameArea -> Menu
-initPauseMenu outs a = Menu words [GameContinue a , GameStartMenu, GameExit] (MenuCursor 0 mushroomEntry)
+initPauseMenu outs a = Menu words [GameContinue a , GameStartMenu, GameExit] (MenuCursor 0 arrowEntry)
     where
-        mushroomEntry = textures outs M.! "mushroom"
+        arrowEntry = textures outs M.! "green_arrow"
         words = [ TextDisplay "Pause" 10 10 175 100 White
                 , TextDisplay "Press ENTER to return" 75 150 100 20 White
                 ]
