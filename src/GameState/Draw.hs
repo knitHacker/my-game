@@ -39,17 +39,36 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
 drawPlayer :: Draws -> GameArea -> Draws
 drawPlayer draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
-        textureEntry = playerTexture $ playerCfgs $ gameStatePlayer gs
+        player = gameStatePlayer gs
+        textureEntry = playerTexture $ playerCfgs player
         t = texture textureEntry
         pSizeX = fromIntegral $ textureWidth textureEntry
         pSizeY = fromIntegral $ textureHeight textureEntry
         xOff = backXOffset $ background gs
         yOff = backYOffset $ background gs
-        (xBoard, yBoard) = playerPosition $ playerState $ gameStatePlayer gs
+        (xBoard, yBoard) = playerPosition $ playerState player
         xPos = fromIntegral (xBoard - xOff)
         yPos = fromIntegral (yBoard - yOff)
-        charRect = getCharacter $ gameStatePlayer gs
+        charRect = getCharacter player
         bottom = fromIntegral (yBoard - yOff) + pSizeY
+
+drawNPC :: Draws -> GameArea -> Draws
+drawNPC draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+    where
+        npcPlayer = npcFollower $ gameStateNPCs gs
+        textureEntry = playerTexture $ playerCfgs npcPlayer
+        t = texture textureEntry
+        pSizeX = fromIntegral $ textureWidth textureEntry
+        pSizeY = fromIntegral $ textureHeight textureEntry
+        xOff = backXOffset $ background gs
+        yOff = backYOffset $ background gs
+        (xBoard, yBoard) = playerPosition $ playerState npcPlayer
+        xPos = fromIntegral (xBoard - xOff)
+        yPos = fromIntegral (yBoard - yOff)
+        charRect = getCharacter npcPlayer
+        bottom = fromIntegral (yBoard - yOff) + pSizeY
+
+
 
 getCharacter :: Player -> SDL.Rectangle CInt
 getCharacter player = mkRect xPos yPos width height
@@ -128,12 +147,13 @@ updateWindow = do
 
 
 updateAreaWindow :: GameConfigs -> GameArea -> ToRender
-updateAreaWindow cfgs area = ToRender draws''' []
+updateAreaWindow cfgs area = ToRender draws'''' []
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
         draws'' = drawPlayer draws' area
-        draws''' =  drawItems draws'' cfgs area
+        draws''' = drawNPC draws'' area
+        draws'''' =  drawItems draws''' cfgs area
 
 
 updateGameMenu :: Menu -> ToRender
