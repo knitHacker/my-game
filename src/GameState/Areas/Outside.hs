@@ -51,7 +51,7 @@ initItems cfgs outs back cm = do
     uniqs <- replicateM numberOfItems newUnique
     return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
     where
-        itemName = "fern"
+        itemName = "mushroom"
         mushroomEntry = textures outs ! itemName
         hb = itemHitBox $ items cfgs ! itemName
         bars = backCollisions back
@@ -84,22 +84,35 @@ insertItem item bars un (x, y) (im, cm) =
 
 
 -- bad literals in code
-initBackground :: OutputHandles -> IO Background
-initBackground outs = do
-    un <- newUnique
-    let barrs = M.insert un ((pondX, pondY),  pond) mempty
-        cm = insert (bb pondX pondY (pondX + (textureWidth pond)) (pondY + (textureHeight pond))) un mempty
-    return $ Background ((textures outs) ! "outside") 0 0 barrs cm
+initBackground :: GameConfigs -> OutputHandles -> IO Background
+initBackground gCfgs outs = do
+    uns <- replicateM (length areaCfg) newUnique
+    let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaCfg)
+    return $ Background backT 0 0 barrs cm
     where
-        pondX = 150
-        pondY = 100
-        backT = textures outs ! "outside"
-        pond = textures outs ! "pond"
+        name = "outside"
+        areaCfg = M.toList $ barriers ((areas gCfgs) ! name)
+        backT = textures outs ! name
+        barrCfgs = barrier_definitions gCfgs
+
+
+insertBarrier :: Unique -> T.Text -> PositionCfg -> M.Map T.Text BarrierCfg
+              -> M.Map T.Text TextureEntry
+              -> M.Map Unique ((Int, Int), TextureEntry) -> RTree Unique
+              -> (M.Map Unique ((Int, Int), TextureEntry), RTree Unique)
+insertBarrier un name aCfg barrCfgs texts barrs rt = (barrs', rt')
+    where
+        xPos = x aCfg
+        yPos = y aCfg
+        text = texts ! name
+        barrs' = M.insert un ((xPos, yPos), text) barrs
+        bCfg = barrCfgs ! name
+        rt' = insert (translate xPos yPos (mainHitBox bCfg)) un rt
 
 
 initOutsideArea :: GameConfigs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
-    back <- initBackground outs
+    back <- initBackground cfgs outs
     (im, cm) <- initItems cfgs outs back mempty
     return $ GameArea back (initPlayer cfgs outs) im cm
 
