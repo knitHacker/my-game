@@ -14,6 +14,7 @@ module GameState.Types
     , Item(..)
     , ItemState(..)
     , Background(..)
+    , NPCManager(..)
     ) where
 
 import Control.Monad
@@ -69,10 +70,16 @@ data MenuCursor = MenuCursor
 data GameArea = GameArea
     { background :: Background
     , gameStatePlayer :: Player
+    , gameStateNPCs :: NPCManager
     , gameStateItemManager :: ItemManager
     , collisionMap :: RTree Unique -- TODO: move this into ItemManager probably
     }
 
+
+
+data NPCManager = NPCManager
+    { npcFollower :: Player
+    }
 
 class Monad m => GameStateRead m where
     readGameState :: m GameState

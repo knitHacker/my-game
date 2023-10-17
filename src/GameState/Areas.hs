@@ -85,12 +85,26 @@ newPosition back player dir = (x'', y'')
         x'' = max (min x' xMax) xMin
         y'' = max (min y' yMax) yMin
 
-
 updatePosition :: Int -> Direction -> (Int, Int)
 updatePosition m DUp = (0, -m)
 updatePosition m DDown = (0, m)
 updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
+
+updateNPC :: Background -> Player -> NPCManager -> NPCManager
+updateNPC back player npc = 
+    where
+        dir = getDirection player
+        hb = getPlayerHitbox player
+
+targetPosition :: Direction -> BoundBox -> (Int, Int)
+targetPosition dir (BB xLeft yUp xRight yDown) =
+    case dir of
+        DUp -> (xLeft, yDown + 10)
+        DDown -> (xLeft, yUp - 10)
+        DLeft -> (xRight + 10, yUp)
+        DRight -> (xLeft - 10, yUp)
+
 
 updateBackground :: GameConfigs -> Background -> Player -> Background
 updateBackground cfgs back player = back { backXOffset = getOffset playerX windowX xMax

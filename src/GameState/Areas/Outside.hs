@@ -26,10 +26,27 @@ import GameState.Collision.RTree
 
 
 mainCharName :: T.Text
-mainCharName = "dog"
+mainCharName = "main_character"
+
+
+npcName :: T.Text
+npcName = "dog"
+
 
 instance Show Unique where
     show = show . hashUnique
+
+initNPC :: GameConfigs -> OutputHandles -> NPCManager
+initNPC cfgs outs = NPCManager $ Player playCfgs playState
+    where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown) mempty
+        charCfgs = characters cfgs ! npcName
+        textureEntry = textures outs ! npcName
+        hb = charHitBox charCfgs
+        cc = charMovement charCfgs
+        startX = 20
+        startY = 10
 
 
 initPlayer :: GameConfigs -> OutputHandles -> Player
@@ -114,7 +131,7 @@ initOutsideArea :: GameConfigs -> OutputHandles -> IO GameArea
 initOutsideArea cfgs outs = do
     back <- initBackground cfgs outs
     (im, cm) <- initItems cfgs outs back mempty
-    return $ GameArea back (initPlayer cfgs outs) im cm
+    return $ GameArea back (initPlayer cfgs outs) (initNPC cfgs outs) im cm
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
