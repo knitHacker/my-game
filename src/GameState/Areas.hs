@@ -92,10 +92,26 @@ updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
 updateNPC :: Background -> Player -> NPCManager -> NPCManager
-updateNPC back player npc = 
+updateNPC back player (NPCManager follow) = 
+
+npcMove :: Background -> Player -> NPCManager -> NPCManager
+npcMove back player (NPCManager follow)
+    | leftDiff > rightDiff && leftDiff > upDiff && leftDiff > downDiff =
+    | rightDiff > upDiff && rightDiff > downDiff =
+    | upDiff > downDiff = 
+    | otherwise = 
     where
+        leftDiff = npcX - targetX
+        rightDiff = targetX - npcX
+        upDiff = npcY - targetY
+        downDiff = targetY - npcY
+        (npcX, npcY) = playerPosition $ playerState follow
         dir = getDirection player
         hb = getPlayerHitbox player
+        (targetX, targetY) = targetPosition dir hb
+        moveAmt = moveStep $ playerMoveCfgs $ playerCfgs follow
+
+
 
 targetPosition :: Direction -> BoundBox -> (Int, Int)
 targetPosition dir (BB xLeft yUp xRight yDown) =
