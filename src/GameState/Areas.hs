@@ -20,30 +20,54 @@ import Debug.Trace
 updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
     | escapePressed inputs = GameMenu (initPauseMenu outs area) True
-    | moveInputPressed inputs && playerStanding (gameStatePlayer area) = GameStateArea area False
-    | otherwise = GameStateArea (area'' { background = background' }) True
+    | otherwise =
+        case playerM of
+            Nothing -> updateArea' area cfgs Nothing (npcNext player)
+            Just p -> updateArea' area cfgs (Just p) (npcNext p)
     where
         player = gameStatePlayer area
+        npc = gameStateNPCs area
         back = background area
-        (moved, player') = updatePlayer back inputs player
-        area' = (area { gameStatePlayer = player' })
-        area'' = if moved then collisionItemCheck area player' else area'
-        background' = updateBackground cfgs (background area'') player'
+        ts = inputTimestamp inputs
+        playerM = updatePlayer back inputs player
+        npcNext p = updateNPC ts back p npc
+
+updateArea' :: GameArea -> GameConfigs -> Maybe Player -> Maybe NPCManager -> GameState
+updateArea' area cfgs pM nM =
+    case (pM, nM) of
+        (Nothing, Nothing) -> GameStateArea area False
+        (Nothing, Just n') -> GameStateArea (areaNPC n') True
+        (Just p', Nothing) ->
+            let a = areaPlay p'
+                a' = areaColl a p'
+                b = backgroundNew a' p'
+            in GameStateArea (a' { background = b}) True
+        (Just p', Just n') ->
+            let a = areaBoth p' n'
+                a' = areaColl a p'
+                b = backgroundNew a' p'
+            in GameStateArea (a' { background = b }) True
+    where
+        areaNPC npc' = (area { gameStateNPCs = npc' })
+        areaPlay player' = (area { gameStatePlayer = player' })
+        areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
+        areaColl oldArea player' = collisionItemCheck oldArea player'
+        backgroundNew area' player' = updateBackground cfgs (background area') player'
 
 
-updatePlayer :: Background -> InputState -> Player -> (Bool, Player)
+updatePlayer :: Background -> InputState -> Player -> Maybe Player
 updatePlayer back inputs player@(Player cfgs state) =
     case (inputStateDirection inputs, playerAction state) of
-        (Nothing, PlayerStanding _) -> (False, player)
-        (Nothing, PlayerMoving (PlayerMove d _ _)) -> (False, player {playerState = state { playerAction = PlayerStanding d}})
-        (Just iDir, PlayerStanding _) -> (True, movePlayer back player iDir ts 0 (newPos iDir))
+        (Nothing, PlayerStanding _ _) -> Nothing
+        (Nothing, PlayerMoving (PlayerMove d _ _)) -> Just (player {playerState = state { playerAction = PlayerStanding d ts}})
+        (Just iDir, PlayerStanding _ _) -> Just (movePlayer back player iDir ts 0 (newPos iDir))
         (Just iDir, PlayerMoving pm@(PlayerMove oldDir oldTs f))
-            | iDir == oldDir && (ts - oldTs) > rate -> (True, movePlayer back player iDir ts (mod (f + 1) 8) (newPos iDir))
-            | iDir == oldDir ->  (False, player)
-            | otherwise -> (True, movePlayer back player iDir ts 0 (newPos iDir))
+            | iDir == oldDir && (ts - oldTs) > rate -> Just (movePlayer back player iDir ts (mod (f + 1) 8) (newPos iDir))
+            | iDir == oldDir -> Nothing
+            | otherwise -> Just (movePlayer back player iDir ts 0 (newPos iDir))
     where
         ts = inputTimestamp inputs
-        newPos newDir = newPosition back player newDir
+        newPos newDir = newCharPosition back player newDir
         rate = stepRate $ playerMoveCfgs cfgs
 
 
@@ -68,8 +92,8 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) = player { playe
                 DLeft -> (x + (x2 - x1), y)
                 DRight -> (x - (x2 - x1), y)
 
-newPosition :: Background -> Player -> Direction -> (Int, Int)
-newPosition back player dir = (x'', y'')
+newCharPosition :: Background -> Player -> Direction -> (Int, Int)
+newCharPosition back player dir = (x'', y'')
     where
         charSizeX = textureWidth $ playerTexture $ playerCfgs player
         charSizeY = textureHeight $ playerTexture $ playerCfgs player
@@ -91,15 +115,33 @@ updatePosition m DDown = (0, m)
 updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
-updateNPC :: Background -> Player -> NPCManager -> NPCManager
-updateNPC back player (NPCManager follow) = 
+updateNPC :: Word32 -> Background -> Player -> NPCManager -> Maybe NPCManager
+updateNPC ts back player npc@(NPCManager p@(Player cfgs state)) =
+    case (targetM, playerAction state) of
+        (Nothing, PlayerMoving pm@(PlayerMove oldDir _ _)) -> Just (npc { npcFollower = p { playerState = state { playerAction = PlayerStanding oldDir ts}}})
+        (Nothing, _) -> Nothing
+        (Just (dir, pos), PlayerStanding _ oldTs) ->
+            if ts - oldTs > rate then Just $ updateNPC pos dir 0 else Nothing
+        (Just (dir, pos), PlayerMoving pm@(PlayerMove oldDir oldTs f))
+            | dir == oldDir && (ts - oldTs) > rate -> Just $ updateNPC pos dir (mod (f + 1) 8)
+            | dir == oldDir -> Nothing
+            | (ts - oldTs) > rate -> Just $ updateNPC pos dir 0
+            | otherwise -> Nothing
+    where
+        rate = stepRate $ playerMoveCfgs cfgs
+        targetM = npcTarget back player npc
+        updateNPC pos dir f =
+            let movement = PlayerMoving (PlayerMove dir ts f)
+            in npc { npcFollower = p { playerState = state { playerPosition = pos, playerAction = movement } } }
 
-npcMove :: Background -> Player -> NPCManager -> NPCManager
-npcMove back player (NPCManager follow)
-    | leftDiff > rightDiff && leftDiff > upDiff && leftDiff > downDiff =
-    | rightDiff > upDiff && rightDiff > downDiff =
-    | upDiff > downDiff = 
-    | otherwise = 
+
+npcTarget :: Background -> Player -> NPCManager -> Maybe (Direction, (Int, Int))
+npcTarget back player (NPCManager follow)
+    | leftDiff == 0 && upDiff == 0 = Nothing
+    | leftDiff > rightDiff && leftDiff > upDiff && leftDiff > downDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft)
+    | rightDiff > upDiff && rightDiff > downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
+    | upDiff > downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
+    | otherwise = Just (DDown, newPosition follow (Just downDiff) DDown)
     where
         leftDiff = npcX - targetX
         rightDiff = targetX - npcX
@@ -112,14 +154,13 @@ npcMove back player (NPCManager follow)
         moveAmt = moveStep $ playerMoveCfgs $ playerCfgs follow
 
 
-
 targetPosition :: Direction -> BoundBox -> (Int, Int)
 targetPosition dir (BB xLeft yUp xRight yDown) =
     case dir of
-        DUp -> (xLeft, yDown + 10)
-        DDown -> (xLeft, yUp - 10)
-        DLeft -> (xRight + 10, yUp)
-        DRight -> (xLeft - 10, yUp)
+        DUp -> (xLeft, yDown + 15)
+        DDown -> (xLeft, yUp - 30)
+        DLeft -> (xRight + 15, yUp)
+        DRight -> (xLeft - 15, yUp)
 
 
 updateBackground :: GameConfigs -> Background -> Player -> Background

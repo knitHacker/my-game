@@ -46,7 +46,7 @@ data MenuAction =
     | GameStartMenu
 
 data PlayerAction =
-    PlayerStanding Direction
+    PlayerStanding Direction Word32
     | PlayerMoving PlayerMovement
     deriving (Show, Eq)
 

@@ -3,6 +3,7 @@ module GameState.Player
     , getDirection
     , getBoundBox
     , getPlayerHitbox
+    , newPosition
     ) where
 
 
@@ -15,13 +16,32 @@ import Configs
 playerStanding :: Player -> Bool
 playerStanding player =
     case playerAction (playerState player) of
-        PlayerStanding _ -> True
+        PlayerStanding _ _ -> True
         _ -> False
+
+
+newPosition :: Player -> Maybe Int -> Direction -> (Int, Int)
+newPosition p@(Player cfg state) maxMoveM dir =
+    case maxMoveM of
+        Nothing -> newPosition' p step dir
+        Just mm -> newPosition' p (min step mm) dir
+    where
+        step = moveStep $ playerMoveCfgs cfg
+
+newPosition' :: Player -> Int -> Direction -> (Int, Int)
+newPosition' p@(Player cfg state) mvAmt dir =
+    case dir of
+        DUp -> (x, y - mvAmt)
+        DDown -> (x, y + mvAmt)
+        DLeft -> (x - mvAmt, y)
+        DRight -> (x + mvAmt, y)
+    where
+        (x, y) = playerPosition state
 
 
 getDirection :: Player -> Direction
 getDirection p = case playerAction (playerState p) of
-    PlayerStanding d -> d
+    PlayerStanding d _ -> d
     PlayerMoving (PlayerMove d _ _) -> d
 
 getPlayerHitbox :: Player -> BoundBox

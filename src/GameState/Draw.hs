@@ -80,7 +80,7 @@ getCharacter player = mkRect xPos yPos width height
         charSizeX = fromIntegral $ textureWidth $ playerTexture $ playerCfgs player
         charSizeY = fromIntegral $ textureHeight $ playerTexture $ playerCfgs player
         (entryY, entryX) = case playerAction $ playerState player of
-            PlayerStanding d -> (4, getDirectionNum d)
+            PlayerStanding d _ -> (4, getDirectionNum d)
             PlayerMoving (PlayerMove d _ f) -> (getDirectionNum d, fromIntegral f)
 
 -- TODO: change this to derive enum (change order on character sheet)

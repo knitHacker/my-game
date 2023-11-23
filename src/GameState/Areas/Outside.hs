@@ -40,7 +40,7 @@ initNPC :: GameConfigs -> OutputHandles -> NPCManager
 initNPC cfgs outs = NPCManager $ Player playCfgs playState
     where
         playCfgs = PlayerCfg textureEntry hb cc
-        playState = PlayerState (startX, startY) (PlayerStanding DDown) mempty
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
         charCfgs = characters cfgs ! npcName
         textureEntry = textures outs ! npcName
         hb = charHitBox charCfgs
@@ -53,7 +53,7 @@ initPlayer :: GameConfigs -> OutputHandles -> Player
 initPlayer cfgs outs = Player playCfgs playState
     where
         playCfgs = PlayerCfg textureEntry hb cc
-        playState = PlayerState (startX, startY) (PlayerStanding DDown) mempty
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
         charCfgs = characters cfgs ! mainCharName
         textureEntry = textures outs ! mainCharName
         hb = charHitBox charCfgs
