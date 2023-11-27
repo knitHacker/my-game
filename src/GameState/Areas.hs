@@ -122,10 +122,13 @@ updateNPC ts back player (NPCManager p) =
         Just p' -> Just (NPCManager p')
 
 
+-- TODO: Add follow collision check (how not to get stuck)
 followPlayer :: Word32 -> Background -> Player -> Player -> Maybe Player
 followPlayer ts back player p@(Player cfgs state) =
     case (targetM, playerAction state) of
-        (Nothing, PlayerMoving pm@(PlayerMove oldDir _ _)) -> Just (p {playerState = state {playerAction = PlayerStanding oldDir ts}})
+        (Nothing, PlayerMoving pm@(PlayerMove oldDir oldTs _))
+            | (ts - oldTs) > rate -> Just (p {playerState = state {playerAction = PlayerStanding oldDir ts}})
+            | otherwise -> Nothing
         (Nothing, _) -> Nothing
         (Just (dir, pos), PlayerStanding _ oldTs) ->
             if ts - oldTs > rate then Just $ updateFollow pos dir 0 else Nothing
