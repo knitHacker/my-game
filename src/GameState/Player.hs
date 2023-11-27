@@ -12,7 +12,6 @@ import GameState.Types
 import InputState
 import Configs
 
-
 playerStanding :: Player -> Bool
 playerStanding player =
     case playerAction (playerState player) of

@@ -116,51 +116,56 @@ updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
 updateNPC :: Word32 -> Background -> Player -> NPCManager -> Maybe NPCManager
-updateNPC ts back player npc@(NPCManager p@(Player cfgs state)) =
+updateNPC ts back player (NPCManager p) =
+    case followPlayer ts back player p of
+        Nothing -> Nothing
+        Just p' -> Just (NPCManager p')
+
+
+followPlayer :: Word32 -> Background -> Player -> Player -> Maybe Player
+followPlayer ts back player p@(Player cfgs state) =
     case (targetM, playerAction state) of
-        (Nothing, PlayerMoving pm@(PlayerMove oldDir _ _)) -> Just (npc { npcFollower = p { playerState = state { playerAction = PlayerStanding oldDir ts}}})
+        (Nothing, PlayerMoving pm@(PlayerMove oldDir _ _)) -> Just (p {playerState = state {playerAction = PlayerStanding oldDir ts}})
         (Nothing, _) -> Nothing
         (Just (dir, pos), PlayerStanding _ oldTs) ->
-            if ts - oldTs > rate then Just $ updateNPC pos dir 0 else Nothing
+            if ts - oldTs > rate then Just $ updateFollow pos dir 0 else Nothing
         (Just (dir, pos), PlayerMoving pm@(PlayerMove oldDir oldTs f))
-            | dir == oldDir && (ts - oldTs) > rate -> Just $ updateNPC pos dir (mod (f + 1) 8)
+            | dir == oldDir && (ts - oldTs) > rate -> Just $ updateFollow pos dir (mod (f + 1) 8)
             | dir == oldDir -> Nothing
-            | (ts - oldTs) > rate -> Just $ updateNPC pos dir 0
+            | (ts - oldTs) > rate -> Just $ updateFollow pos dir 0
             | otherwise -> Nothing
     where
         rate = stepRate $ playerMoveCfgs cfgs
-        targetM = npcTarget back player npc
-        updateNPC pos dir f =
+        targetM = followTarget back player p
+        updateFollow pos dir f =
             let movement = PlayerMoving (PlayerMove dir ts f)
-            in npc { npcFollower = p { playerState = state { playerPosition = pos, playerAction = movement } } }
+            in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
-npcTarget :: Background -> Player -> NPCManager -> Maybe (Direction, (Int, Int))
-npcTarget back player (NPCManager follow)
+followTarget :: Background -> Player -> Player -> Maybe (Direction, (Int, Int))
+followTarget back player follow
+    | leftDiff == 0 && upDiff == 0 && dir /= nDir = Just (dir, newPosition follow (Just 0) dir)
     | leftDiff == 0 && upDiff == 0 = Nothing
-    | leftDiff > rightDiff && leftDiff > upDiff && leftDiff > downDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft)
-    | rightDiff > upDiff && rightDiff > downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
-    | upDiff > downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
+    | leftDiff >= rightDiff && leftDiff >= upDiff && leftDiff >= downDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft)
+    | rightDiff >= upDiff && rightDiff >= downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
+    | upDiff >= downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
     | otherwise = Just (DDown, newPosition follow (Just downDiff) DDown)
     where
-        leftDiff = npcX - targetX
-        rightDiff = targetX - npcX
-        upDiff = npcY - targetY
-        downDiff = targetY - npcY
-        (npcX, npcY) = playerPosition $ playerState follow
+        leftDiff = folX - targetX
+        rightDiff = targetX - folX
+        upDiff = folY - targetY
+        downDiff = targetY - folY
+        (folX, folY) = playerPosition $ playerState follow
+        (BB folXLeft folYUp folXRight folYDown) = getBoundBox dir $ playerHitBoxes $ playerCfgs follow
         dir = getDirection player
-        hb = getPlayerHitbox player
-        (targetX, targetY) = targetPosition dir hb
-        moveAmt = moveStep $ playerMoveCfgs $ playerCfgs follow
-
-
-targetPosition :: Direction -> BoundBox -> (Int, Int)
-targetPosition dir (BB xLeft yUp xRight yDown) =
-    case dir of
-        DUp -> (xLeft, yDown + 15)
-        DDown -> (xLeft, yUp - 30)
-        DLeft -> (xRight + 15, yUp)
-        DRight -> (xLeft - 15, yUp)
+        nDir = getDirection follow
+        (pX, pY) = playerPosition $ playerState player
+        (BB xLeft yUp xRight yDown)  = getBoundBox dir $ playerHitBoxes $ playerCfgs player
+        (targetX, targetY) = case dir of
+                                DUp -> (pX - folXLeft, pY + yDown + 15)
+                                DDown -> (pX - folXLeft, pY - 15)
+                                DLeft -> (pX + xRight + 15, pY + yDown - folYDown)
+                                DRight -> (pX - 15 - folXRight, pY + yDown - folYDown)
 
 
 updateBackground :: GameConfigs -> Background -> Player -> Background
