@@ -37,7 +37,7 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
 
 
 drawPlayer :: Draws -> GameArea -> Draws
-drawPlayer draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer draws gs = M.insert (bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         player = gameStatePlayer gs
         textureEntry = playerTexture $ playerCfgs player
@@ -103,7 +103,7 @@ drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
 drawItem xStart yStart width height d (ItemState (Item tE _ _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
-    | otherwise = M.insert (bottom, 2, xPos') (Draw t xPos' yPos' w h Nothing) d
+    | otherwise = M.insert (bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         tW = textureWidth tE
