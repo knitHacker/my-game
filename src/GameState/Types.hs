@@ -38,7 +38,6 @@ data GameState =
     | GameStateArea GameArea Bool
     | GameExiting
 
-
 data MenuAction =
     GameStart
     | GameExit

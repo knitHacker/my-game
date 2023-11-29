@@ -165,7 +165,7 @@ followTarget back player follow
         (pX, pY) = playerPosition $ playerState player
         (BB xLeft yUp xRight yDown)  = getBoundBox dir $ playerHitBoxes $ playerCfgs player
         (targetX, targetY) = case dir of
-                                DUp -> (pX - folXLeft, pY + yDown + 15)
+                                DUp -> (pX - folXLeft + xLeft, pY + yDown + 15)
                                 DDown -> (pX - folXLeft, pY - 15)
                                 DLeft -> (pX + xRight + 15, pY + yDown - folYDown)
                                 DRight -> (pX - 15 - folXRight, pY + yDown - folYDown)
