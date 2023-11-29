@@ -108,6 +108,7 @@ instance ToJSON BarrierCfg
 
 data GameConfigs = GameConfigs
     { debug :: Bool
+    , debugOutlineTexture :: Bool
     , boardSizeX :: Int
     , boardSizeY :: Int
     , windowSizeX :: Int

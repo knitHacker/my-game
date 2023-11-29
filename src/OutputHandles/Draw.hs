@@ -51,8 +51,6 @@ color Blue   = SDL.V4 0 0 maxBound maxBound
 color Yellow = SDL.V4 maxBound maxBound 0 maxBound
 
 
-
-
 setColor :: (MonadIO m) => SDL.Renderer -> Color -> m ()
 setColor r c = SDL.rendererDrawColor r $= color c
 
@@ -64,16 +62,20 @@ initWindow r = do
     SDL.present r
 
 
-drawAll :: (MonadIO m, OutputRead m) => ToRender -> m ()
+drawAll :: (MonadIO m, OutputRead m, ConfigsRead m) => ToRender -> m ()
 drawAll drawings = do
+    cfgs <- readConfigs
     outs <- getOutputs
-    let r = renderer outs
+    let drawOutline = debugOutlineTexture cfgs
+        r = renderer outs
         ratX = ratioX outs
         ratY = ratioY outs
         drawings' = scaleDraw ratX ratY <$> draws drawings
         words' = scaleWords ratX ratY <$> drawWords drawings
     SDL.clear r
-    mapM_ (draw r) drawings'
+    setColor r Red
+    mapM_ (draw drawOutline r) drawings'
+    setColor r Black
     mapM_ (drawText r (font outs)) words'
     SDL.present r
 
@@ -84,9 +86,10 @@ drawText r font wd = do
     SDL.copy r text Nothing (Just (mkRect (wordsPosX wd) (wordsPosY wd) (wordsWidth wd) (wordsHeight wd)))
     SDL.freeSurface surf
 
-draw :: MonadIO m => SDL.Renderer -> Draw -> m ()
-draw r d = do
+draw :: MonadIO m => Bool -> SDL.Renderer -> Draw -> m ()
+draw showRect r d = do
     SDL.copy r (drawTexture d) (drawMask d) (Just pos)
+    when showRect $ SDL.drawRect r (Just pos)
     where
         pos = mkRect (drawPosX d) (drawPosY d) (drawWidth d) (drawHeight d)
 
