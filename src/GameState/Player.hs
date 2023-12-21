@@ -4,10 +4,13 @@ module GameState.Player
     , getBoundBox
     , getPlayerHitbox
     , newPosition
+    , movePlayer
     ) where
 
-
+import Data.Word (Word32)
+import OutputHandles.Types
 import GameState.Collision.BoundBox
+import GameState.Collision.RTree
 import GameState.Types
 import InputState
 import Configs
@@ -61,3 +64,26 @@ getBoundBox dir hbs =
     where
         sideHb = sideHitbox hbs
         frontHb = frontHitbox hbs
+
+movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
+movePlayer back player@(Player cfg state) dir ts f (newX, newY) = player { playerState = state { playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
+    where
+        newPos = foldl movePlayer' (newX, newY) collisions
+        (oldX, oldY) = playerPosition state
+        hb = getBoundBox dir hitboxes
+        hitboxes = playerHitBoxes cfg
+        oldPlayerBB = translate oldX oldY hb
+        rtree = backCollisions back
+        collisions = getIntersections movementBB rtree
+        playerT = playerTexture cfg
+        playerWidth = textureWidth playerT
+        playerBB = translate newX newY hb
+        movementBB = union oldPlayerBB playerBB
+        movePlayer' (x, y) b@(BB x1 y1 x2 y2) =
+            case dir of
+                DUp -> (x, y + (y2 - y1))
+                DDown -> (x, y - (y2 - y1))
+                DLeft -> (x + (x2 - x1), y)
+                DRight -> (x - (x2 - x1), y)
+
+
