@@ -360,7 +360,7 @@ delete bb (RTree t) =
     case delete' bb t of
         DEmpty -> Empty
         (DTree inT) -> RTree inT
-        (Orphans inT) -> undefined -- RTree inT
+        (Orphans inT) -> insertAll inT Empty
 
 delete' :: BoundBox -> InRTree a -> TreeDelete a
 delete' bb l@(Leaf bb' a)

@@ -71,27 +71,6 @@ updatePlayer back inputs player@(Player cfgs state) =
         rate = stepRate $ playerMoveCfgs cfgs
 
 
-movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
-movePlayer back player@(Player cfg state) dir ts f (newX, newY) = player { playerState = state { playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
-    where
-        newPos = foldl movePlayer' (newX, newY) collisions
-        (oldX, oldY) = playerPosition state
-        hb = getBoundBox dir hitboxes
-        hitboxes = playerHitBoxes cfg
-        oldPlayerBB = translate oldX oldY hb
-        rtree = backCollisions back
-        collisions = getIntersections movementBB rtree
-        playerT = playerTexture cfg
-        playerWidth = textureWidth playerT
-        playerBB = translate newX newY hb
-        movementBB = union oldPlayerBB playerBB
-        movePlayer' (x, y) b@(BB x1 y1 x2 y2) =
-            case dir of
-                DUp -> (x, y + (y2 - y1))
-                DDown -> (x, y - (y2 - y1))
-                DLeft -> (x + (x2 - x1), y)
-                DRight -> (x - (x2 - x1), y)
-
 newCharPosition :: Background -> Player -> Direction -> (Int, Int)
 newCharPosition back player dir = (x'', y'')
     where
@@ -109,11 +88,13 @@ newCharPosition back player dir = (x'', y'')
         x'' = max (min x' xMax) xMin
         y'' = max (min y' yMax) yMin
 
+
 updatePosition :: Int -> Direction -> (Int, Int)
 updatePosition m DUp = (0, -m)
 updatePosition m DDown = (0, m)
 updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
+
 
 updateNPC :: Word32 -> Background -> Player -> NPCManager -> Maybe NPCManager
 updateNPC ts back player (NPCManager p) =
@@ -141,7 +122,8 @@ followPlayer ts back player p@(Player cfgs state) =
         rate = stepRate $ playerMoveCfgs cfgs
         targetM = followTarget back player p
         updateFollow pos dir f =
-            let movement = PlayerMoving (PlayerMove dir ts f)
+            let
+                movement = PlayerMoving (PlayerMove dir ts f)
             in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
