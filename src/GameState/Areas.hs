@@ -121,10 +121,10 @@ followPlayer ts back player p@(Player cfgs state) =
     where
         rate = stepRate $ playerMoveCfgs cfgs
         targetM = followTarget back player p
-        updateFollow pos dir f =
-            let
-                movement = PlayerMoving (PlayerMove dir ts f)
-            in p {playerState = state {playerPosition = pos, playerAction = movement}}
+        updateFollow pos dir f = movePlayer back p dir ts f pos
+            -- let 
+            --     movement = PlayerMoving (PlayerMove dir ts f)
+            -- in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
 followTarget :: Background -> Player -> Player -> Maybe (Direction, (Int, Int))
