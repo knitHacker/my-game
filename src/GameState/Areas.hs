@@ -14,12 +14,14 @@ import GameState.Collision.RTree
 import GameState.Player
 import GameState.Types
 import GameState.Menu.PauseMenu
+import GameState.Inventory
 
 import Debug.Trace
 
 updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
-    | escapePressed inputs = GameMenu (initPauseMenu outs area) True
+    | escapeJustPressed inputs = GameMenu (initPauseMenu outs area) True
+    | iPressed inputs = GameInventory (initInventory outs area)
     | otherwise =
         case playerM of
             Nothing -> updateArea' area cfgs Nothing (npcNext player)

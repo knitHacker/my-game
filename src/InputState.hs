@@ -5,6 +5,10 @@ module InputState
     , updateInput
     , Direction(..)
     , escapePressed
+    , escapeJustPressed
+    , enterPressed
+    , enterJustPressed
+    , iPressed
     , moveInputPressed
     ) where
 
@@ -25,31 +29,48 @@ data Direction
 data KeyPress
     = EnterPress
     | EscapePress
+    | IPress
+    deriving (Show, Eq)
 
 
 data InputState = InputState
     { inputStateQuit :: Bool
     , inputStateDirection :: Maybe Direction
-    , inputStateEnter :: Bool
-    , inputStateEsc :: Bool
+    , inputControl :: Maybe KeyPress
     , inputRepeat :: Bool
     , inputTimestamp :: Word32
     } deriving (Show, Eq)
 
 
 initInputState :: IO InputState
-initInputState = return $ InputState False Nothing False False False 0
+initInputState = return $ InputState False Nothing Nothing False 0
 
 
 class Monad m => InputRead m where
     readInputState :: m InputState
 
 escapePressed :: InputState -> Bool
-escapePressed (InputState _ _ _ True _ _) = True
+escapePressed (InputState _ _ (Just EscapePress) _ _) = True
 escapePressed _ = False
 
+escapeJustPressed :: InputState -> Bool
+escapeJustPressed (InputState _ _ (Just EscapePress) False _) = True
+escapeJustPressed _ = False
+
+enterPressed :: InputState -> Bool
+enterPressed (InputState _ _ (Just EnterPress) _ _) = True
+enterPressed _ = False
+
+enterJustPressed :: InputState -> Bool
+enterJustPressed (InputState _ _ (Just EnterPress) False _) = True
+enterJustPressed _ = False
+
+iPressed :: InputState -> Bool
+iPressed (InputState _ _ (Just IPress) _ _) = True
+iPressed _ = False
+
 moveInputPressed :: InputState -> Bool
-moveInputPressed (InputState _ Nothing _ _ _ _) = True
+moveInputPressed (InputState _ (Just _) _ _ _) = True
 moveInputPressed _ = False
 
 
@@ -65,14 +86,13 @@ updateInput = do
 
 
 payloadToIntent :: SDL.Event -> Word32 -> InputState
-payloadToIntent (SDL.Event _ SDL.QuitEvent) ts = InputState True Nothing False False False ts
+payloadToIntent (SDL.Event _ SDL.QuitEvent) ts = InputState True Nothing Nothing False ts
 payloadToIntent (SDL.Event _ (SDL.KeyboardEvent k)) ts =
     case getKey k of
-        Nothing -> InputState False Nothing False False False ts
-        Just (r, Left EnterPress) -> InputState False Nothing True False r ts
-        Just (r, Left EscapePress) -> InputState False Nothing False True r ts
-        Just (r, Right d) -> InputState False (Just d) False False r ts
-payloadToIntent (SDL.Event _ _) ts = InputState False Nothing False False False ts
+        Nothing -> InputState False Nothing Nothing False ts
+        Just (r, Left ctr) -> InputState False Nothing (Just ctr) r ts
+        Just (r, Right d) -> InputState False (Just d) Nothing r ts
+payloadToIntent (SDL.Event _ _) ts = InputState False Nothing Nothing False ts
 
 
 getKey :: SDL.KeyboardEventData -> Maybe (Bool, Either KeyPress Direction)
@@ -85,5 +105,5 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed repeat keysym) =
     SDL.KeycodeRight  -> Just (repeat, Right DRight)
     SDL.KeycodeReturn -> Just (repeat, Left EnterPress)
     SDL.KeycodeEscape -> Just (repeat, Left EscapePress)
+    SDL.KeycodeI      -> Just (repeat, Left IPress)
     _                 -> Nothing
-
