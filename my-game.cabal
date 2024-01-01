@@ -61,6 +61,7 @@ library
       GameState.Collision.BoundBox
       GameState.Collision.RTree
       GameState.Draw
+      GameState.Inventory
       GameState.Menu
       GameState.Menu.MainMenu
       GameState.Menu.PauseMenu

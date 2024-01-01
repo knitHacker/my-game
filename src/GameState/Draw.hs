@@ -143,6 +143,7 @@ updateWindow = do
         GameMenu _ False -> return Nothing
         GameStateArea area True -> return $ Just $ updateAreaWindow cfgs area
         GameStateArea _ False -> return Nothing
+        GameInventory inv -> return $ Just $ updateInventory inv
         _ -> return $ Just $ ToRender M.empty []
 
 
@@ -187,3 +188,6 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
                         GameExit -> ("Exit", 100, 18)
                         GameContinue _ -> ("Continue", 100, 35)
                         GameStartMenu -> ("Return to Main Menu", 100, 80)
+
+updateInventory :: Inventory -> ToRender
+updateInventory inv = ToRender M.empty []

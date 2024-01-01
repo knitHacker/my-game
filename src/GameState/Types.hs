@@ -1,5 +1,6 @@
 module GameState.Types
     ( GameState(..)
+    , Inventory(..)
     , GameStateRead(..)
     , GameArea(..)
     , Menu(..)
@@ -39,7 +40,13 @@ import Utils
 data GameState =
     GameMenu Menu Bool
     | GameStateArea GameArea Bool
+    | GameInventory Inventory
     | GameExiting
+
+data Inventory = Inventory
+    { areaInfo :: GameArea
+    , invCursor :: MenuCursor
+    }
 
 -- Actions that can be done from the Menu
 --  Start makes a new game area

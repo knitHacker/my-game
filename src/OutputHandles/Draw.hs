@@ -108,5 +108,3 @@ scaleWords rX rY (TextDisplay wd pX pY w h c) = TextDisplay wd (scale pX rX) (sc
         scale 0 _ = 0
         scale _ 0 = 0
         scale o r = floor ((fromIntegral o) * r)
-
-

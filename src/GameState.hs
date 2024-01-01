@@ -13,6 +13,7 @@ import GameState.Areas
 import GameState.Areas.Outside
 import GameState.Menu.MainMenu
 import GameState.Menu.PauseMenu
+import GameState.Inventory
 import OutputHandles.Types
 import GameState.Collision.RTree
 import GameState.Collision.BoundBox
@@ -54,6 +55,7 @@ updateGameState = do
     case gs of
         GameMenu m _ -> liftIO $ updateGameStateInMenu m cfgs inputs outs
         GameStateArea area _ -> return $ updateGameStateInArea outs cfgs inputs area
+        GameInventory inv -> return $ updateGameInventory inputs inv
         _ -> return gs
 
 incrementMenuCursor :: Menu -> Menu
@@ -68,7 +70,7 @@ decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos
 
 updateGameStateInMenu :: Menu -> GameConfigs -> InputState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs outs =
-    if inputStateEnter inputs && not (inputRepeat inputs)
+    if enterJustPressed inputs
         then case (options m !! curPos) of
             GameStart -> do
                 area <- initOutsideArea cfgs outs
@@ -86,5 +88,3 @@ updateGameStateInMenu m cfgs inputs outs =
 
 updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateGameStateInArea = updateArea
-
-
