@@ -14,6 +14,11 @@
         "sizeY": 300,
         "file": "assets/images/outside.png"
     },
+    "bag": {
+        "sizeX": 400,
+        "sizeY": 300,
+        "file": "assets/images/bag.png"
+    },
     "pond": {
         "sizeX": 80,
         "sizeY": 80,
