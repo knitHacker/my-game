@@ -53,8 +53,8 @@ updateArea' area cfgs pM nM =
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl oldArea player' = collisionItemCheck oldArea player'
-        backgroundNew area' player' = updateBackground cfgs (background area') player'
+        areaColl = collisionItemCheck
+        backgroundNew area' = updateBackground cfgs (background area')
 
 
 updatePlayer :: Background -> InputState -> Player -> Maybe Player
@@ -80,8 +80,8 @@ newCharPosition back player dir = (x'', y'')
         charSizeY = textureHeight $ playerTexture $ playerCfgs player
         moveAmt = moveStep $ playerMoveCfgs $ playerCfgs player
         (xMove, yMove) = updatePosition moveAmt dir
-        xMax = (textureWidth $ backArea back) - charSizeX
-        yMax = (textureHeight $ backArea back) - charSizeY
+        xMax = textureWidth (backArea back) - charSizeX
+        yMax = textureHeight (backArea back) - charSizeY
         xMin = 0
         yMin = 0
         (x, y) = playerPosition $ playerState player
@@ -131,12 +131,19 @@ followPlayer ts back player p@(Player cfgs state) =
 
 followTarget :: Background -> Player -> Player -> Maybe (Direction, (Int, Int))
 followTarget back player follow
+    -- already in the target location but facing a different direction than the player so change facing direction
     | leftDiff == 0 && upDiff == 0 && dir /= nDir = Just (dir, newPosition follow (Just 0) dir)
+    -- already in the target location so don't move
     | leftDiff == 0 && upDiff == 0 = Nothing
-    | leftDiff >= rightDiff && leftDiff >= upDiff && leftDiff >= downDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft)
-    | rightDiff >= upDiff && rightDiff >= downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
-    | upDiff >= downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
-    | otherwise = Just (DDown, newPosition follow (Just downDiff) DDown)
+    | otherwise = undefined
+    -- left direction is furthest from the target so move left
+    -- | leftDiff >= rightDiff && downDiff >= upDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft, DDown, newPosition follow (Just downDiff) DDown)
+    -- right direction is furthest from the target so move right
+    -- | rightDiff >= upDiff && rightDiff >= downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
+    -- up direction is furthest from the target so move up
+    -- | upDiff >= downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
+    -- only other option is down direction is furthest from the target so move down
+    -- | otherwise = Just (DDown, newPosition follow (Just downDiff) DDown)
     where
         leftDiff = folX - targetX
         rightDiff = targetX - folX
@@ -166,9 +173,9 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
         yMax = textureHeight $ backArea back
         (playerX, playerY) = playerPosition $ playerState player
         getOffset playerPos window areaMax
-            | playerPos < (div window 2) = 0
-            | playerPos > areaMax - (div window 2) = areaMax - window
-            | otherwise = playerPos - (div window 2)
+            | playerPos < div window 2 = 0
+            | playerPos > areaMax - div window 2 = areaMax - window
+            | otherwise = playerPos - div window 2
 
 
 collisionItemCheck :: GameArea -> Player -> GameArea
@@ -187,8 +194,8 @@ collisionItemCheck gs player =
         items = gameStateItemManager gs
         updateObject (is, t, p) (ahb, a) =
             let item = is ! a
-                items' = M.adjust (\_ -> item {itemPosition=Nothing}) a is
+                items' = M.adjust (const item {itemPosition=Nothing}) a is
                 cm' = delete ahb t
                 pState = playerState p
-                player' = p { playerState = pState { playerItems = (M.insertWith (+) (itemType (itemInfo item)) 1 (playerItems pState)) }}
+                player' = p { playerState = pState { playerItems = M.insertWith (+) (itemType (itemInfo item)) 1 (playerItems pState) }}
             in (items', cm', player')
