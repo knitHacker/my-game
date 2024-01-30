@@ -18,7 +18,9 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 
-type Draws = M.Map (CInt, Int, CInt) Draw
+type Position = (Int, CInt, Int, CInt)
+
+type Draws = M.Map Position Draw
 
 data ToRender = ToRender
     { draws :: !Draws

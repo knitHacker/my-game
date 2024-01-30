@@ -17,6 +17,7 @@ data-files:
 - data/configs/game.json
 - data/configs/textures.json
 - assets/images/outside.png
+- assets/images/bag.png
 - assets/images/main_character_sheet.png
 - assets/images/dog_character_sheet.png
 - assets/images/mushroom.png

@@ -23,7 +23,7 @@ import InputState
 import Debug.Trace
 
 drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
-drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
+drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
     where
         back = background gs
         t = texture $ backArea back
@@ -37,7 +37,7 @@ drawBackground draws cfgs gs = M.insert (0, -1, 0) (Draw t 0 0 boardWidth boardH
 
 
 drawPlayer :: Draws -> GameArea -> Draws
-drawPlayer draws gs = M.insert (bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer draws gs = M.insert (0, bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         player = gameStatePlayer gs
         textureEntry = playerTexture $ playerCfgs player
@@ -53,7 +53,7 @@ drawPlayer draws gs = M.insert (bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY
         bottom = fromIntegral (yBoard - yOff) + pSizeY
 
 drawNPC :: Draws -> GameArea -> Draws
-drawNPC draws gs = M.insert (bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawNPC draws gs = M.insert (0, bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
     where
         npcPlayer = npcFollower $ gameStateNPCs gs
         textureEntry = playerTexture $ playerCfgs npcPlayer
@@ -103,7 +103,7 @@ drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
 drawItem xStart yStart width height d (ItemState (Item tE _ _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
-    | otherwise = M.insert (bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
+    | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         tW = textureWidth tE
@@ -125,7 +125,7 @@ drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
         yOff = backYOffset back
 
 drawBarrier :: Int -> Int -> Draws -> ((Int, Int), TextureEntry) -> Draws
-drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
+drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         w = fromIntegral $ textureWidth tE
@@ -143,7 +143,7 @@ updateWindow = do
         GameMenu _ False -> return Nothing
         GameStateArea area True -> return $ Just $ updateAreaWindow cfgs area
         GameStateArea _ False -> return Nothing
-        GameInventory inv -> return $ Just $ updateInventory inv
+        GameInventory inv -> return $ Just $ updateInventory cfgs inv
         _ -> return $ Just $ ToRender M.empty []
 
 
@@ -164,7 +164,7 @@ updateGameMenu (Menu words opts cur) = ToRender M.empty words <> updateMenuOptio
 updateMenuOptions :: MenuCursor -> [MenuAction] -> ToRender
 updateMenuOptions (MenuCursor pos tE) ma = ToRender draws $ updateMenuOptions' ma 180
     where
-        draws = M.singleton (bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing)
+        draws = M.singleton (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing)
         t = texture tE
         tW = textureWidth tE
         tH = textureHeight tE
@@ -189,5 +189,12 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
                         GameContinue _ -> ("Continue", 100, 35)
                         GameStartMenu -> ("Return to Main Menu", 100, 80)
 
-updateInventory :: Inventory -> ToRender
-updateInventory inv = ToRender M.empty []
+updateInventory :: GameConfigs -> Inventory -> ToRender
+updateInventory cfgs inv = current <> ToRender draws []
+    where
+        bagE = bagTexture inv
+        boardWidth = boardSizeX cfgs
+        boardHeight = boardSizeY cfgs
+        draws = M.singleton (1, 100, 0, 0) (Draw (texture bagE) 0 0 (fromIntegral boardWidth) (fromIntegral boardHeight) Nothing)
+        area = areaInfo inv
+        current = updateAreaWindow cfgs area

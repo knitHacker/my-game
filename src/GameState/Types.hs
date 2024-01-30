@@ -46,6 +46,7 @@ data GameState =
 data Inventory = Inventory
     { areaInfo :: GameArea
     , invCursor :: MenuCursor
+    , bagTexture :: TextureEntry
     }
 
 -- Actions that can be done from the Menu
