@@ -24,6 +24,11 @@
         "sizeY": 80,
         "file": "assets/images/pond.png"
     },
+    "stump": {
+        "sizeX": 20,
+        "sizeY": 20,
+        "file": "assets/images/stump.png"
+    },
     "mushroom": {
         "sizeX": 6,
         "sizeY": 6,

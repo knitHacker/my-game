@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.35.2.
+-- This file has been generated from package.yaml by hpack version 0.36.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -30,6 +30,7 @@ extra-source-files:
     assets/images/mushroom.png
     assets/images/outside.png
     assets/images/pond.png
+    assets/images/stump.png
     assets/fonts/InsightSansSSi.ttf
 data-files:
     data/configs/game.json
@@ -41,6 +42,7 @@ data-files:
     assets/images/mushroom.png
     assets/images/lavender.png
     assets/images/pond.png
+    assets/images/stump.png
     assets/images/fern.png
     assets/images/arrow.png
     assets/fonts/InsightSansSSi.ttf

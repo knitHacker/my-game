@@ -157,7 +157,7 @@ drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (0, bottom, 0, xPos') 
         h = fromIntegral $ textureHeight tE
         xPos' = fromIntegral (xPos - xStart)
         yPos' = fromIntegral (yPos - yStart)
-        bottom = yPos'
+        bottom = yPos' + h
 
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do

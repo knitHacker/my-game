@@ -19,6 +19,10 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
 
+-- first number is layer number
+-- second number is y position
+-- third number is priority
+-- fourth number is x position
 type Position = (Int, CInt, Int, CInt)
 
 type Draws = M.Map Position Draw
