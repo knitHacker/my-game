@@ -8,11 +8,11 @@ module Env
     ) where
 
 
-import Env.Types
-import Configs
-import OutputHandles.Types
-import InputState
-import GameState
+import Env.Types ( AppEnv(..), AppEnvData(AppEnvData) )
+import Configs ( GameConfigs )
+import OutputHandles.Types ( OutputHandles )
+import InputState ( initInputState )
+import GameState ( initGameState )
 
 import Control.Monad.Reader     (runReaderT)
 

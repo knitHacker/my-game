@@ -6,7 +6,12 @@ module GameState.Menu.PauseMenu
 import qualified Data.Map.Strict as M
 
 import OutputHandles.Types
+    ( Color(White), OutputHandles(textures), TextDisplay(TextDisplay) )
 import GameState.Types
+    ( GameArea,
+      MenuCursor(MenuCursor),
+      Menu(Menu),
+      MenuAction(GameExit, GameContinue, GameStartMenu) )
 
 initPauseMenu :: OutputHandles -> GameArea -> Menu
 initPauseMenu outs a = Menu words [GameContinue a , GameStartMenu, GameExit] (MenuCursor 0 arrowEntry)

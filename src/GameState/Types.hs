@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module GameState.Types
     ( GameState(..)
     , Inventory(..)
@@ -153,12 +154,15 @@ data Item = Item
     }
 
 instance Eq Item where
+    (==) :: Item -> Item -> Bool
     (==) i1 i2 = (itemType i1) == (itemType i2)
 
 instance Ord Item where
+    compare :: Item -> Item -> Ordering
     compare i1 i2 = compare (itemType i1) (itemType i2)
 
 instance Show Item where
+    show :: Item -> String
     show = show . itemType
 
 -- Item state

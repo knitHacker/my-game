@@ -16,17 +16,17 @@ module Configs
     , BarrierCfg(..)
     ) where
 
-import Control.Monad
-import System.IO
-import Paths_my_game
-import GHC.Generics
-import Data.Aeson
-import Data.Aeson.Types
-import Data.Either
+import Control.Monad ()
+import System.IO ()
+import Paths_my_game ()
+import GHC.Generics ( Generic )
+import Data.Aeson ( FromJSON, ToJSON, eitherDecodeFileStrict )
+import Data.Aeson.Types ( FromJSON, ToJSON )
+import Data.Either ()
 import Data.Word (Word32)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import GameState.Collision.BoundBox
+import GameState.Collision.BoundBox ( BoundBox )
 
 import Env.Files    (getGameFullPath)
 

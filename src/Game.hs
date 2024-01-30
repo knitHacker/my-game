@@ -2,19 +2,21 @@ module Game
     ( runGame
     ) where
 
-import OutputHandles.Types
-import OutputHandles
-import Env
+import OutputHandles.Types ( OutputRead(getOutputs) )
+import OutputHandles ( cleanupOutputHandles, executeDraw )
+import Env ( runAppEnv )
 import Env.Types
-import InputState
-import GameState
-import GameState.Draw
+    ( AppEnv, AppEnvData(appEnvDataInputState, appEnvDataGameState) )
+import InputState ( updateInput, InputState(inputStateQuit) )
+import GameState ( isGameExiting, updateGameState )
+import GameState.Draw ( updateWindow )
 
 import qualified SDL
-import Control.Monad.IO.Class
-import Control.Monad.Reader
+import Control.Monad.IO.Class ()
+import Control.Monad.Reader ( MonadReader(ask) )
 import Data.Time.Clock.System
-import Data.Word
+    ( SystemTime(systemSeconds, systemNanoseconds), getSystemTime )
+import Data.Word ( Word32 )
 
 framesPerSecond :: Word32
 framesPerSecond = 60

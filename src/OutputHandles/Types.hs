@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE InstanceSigs #-}
 module OutputHandles.Types
     ( OutputHandles(..)
     , OutputRead(..)
@@ -10,10 +11,10 @@ module OutputHandles.Types
     , TextDisplay(..)
     ) where
 
-import Foreign.C.Types
+import Foreign.C.Types ( CInt )
 import qualified SDL
 import qualified SDL.Font as Font
-import Control.Monad
+import Control.Monad ()
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
@@ -28,9 +29,11 @@ data ToRender = ToRender
     }
 
 instance Monoid ToRender where
+    mempty :: ToRender
     mempty = ToRender M.empty []
 
 instance Semigroup ToRender where
+   (<>) :: ToRender -> ToRender -> ToRender
    (<>) (ToRender m1 l1) (ToRender m2 l2) = ToRender (m1 <> m2) (l1 <> l2)
 
 data Color = White | Black | Red | Blue | Green | Yellow

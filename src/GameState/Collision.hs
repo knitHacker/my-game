@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module GameState.Collision
     ( CollisionMap(..)
     , singleton
@@ -10,10 +11,10 @@ module GameState.Collision
     , Order(..)
     ) where
 
-import Data.Maybe
+import Data.Maybe ()
 import qualified Data.List as L
 
-import Debug.Trace
+import Debug.Trace ()
 
 data CollisionMap a = CollisionMap
     { xMap :: Maybe (SegTree a)
@@ -22,9 +23,11 @@ data CollisionMap a = CollisionMap
 
 
 instance Monoid (CollisionMap a) where
+    mempty :: CollisionMap a
     mempty = CollisionMap Nothing Nothing
 
 instance Semigroup (CollisionMap a) where
+    (<>) :: CollisionMap a -> CollisionMap a -> CollisionMap a
     (<>) = undefined
 
 singleton :: Int -> Int -> Int -> Int -> a -> CollisionMap a

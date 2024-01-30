@@ -7,8 +7,11 @@ module GameState.Inventory
 import qualified Data.Map.Strict as M
 
 import GameState.Types
-import OutputHandles.Types
-import InputState
+    ( GameArea,
+      Inventory(Inventory, areaInfo),
+      GameState(GameInventory, GameStateArea) )
+import OutputHandles.Types ( OutputHandles(textures) )
+import InputState ( escapeJustPressed, InputState )
 
 initInventory :: OutputHandles -> GameArea -> Inventory
 initInventory outs area = Inventory area bagEntry

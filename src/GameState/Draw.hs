@@ -4,24 +4,48 @@ module GameState.Draw
     ) where
 
 
-import Foreign.C.Types
+import Foreign.C.Types ( CInt )
 import qualified SDL
-import SDL.Vect
+import SDL.Vect ()
 import SDL                    (($=))
-import Control.Monad
+import Control.Monad ()
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import qualified Data.Text as T
 
 import Configs
-import GameState
+    ( ConfigsRead(readConfigs), GameConfigs(boardSizeX, boardSizeY) )
+import GameState ()
 import GameState.Types
+    ( Background(backArea, backXOffset, backYOffset, backBarriers),
+      ItemState(ItemState),
+      Item(Item, itemTexture, itemType),
+      Player(playerCfgs, playerState),
+      PlayerState(playerPosition, playerAction, playerItems),
+      PlayerConfig(playerTexture),
+      GameStateRead(..),
+      NPCManager(npcFollower),
+      GameArea(gameStateNPCs, gameStateItemManager, background,
+               gameStatePlayer),
+      MenuCursor(MenuCursor),
+      Menu(Menu),
+      PlayerMovement(PlayerMove),
+      PlayerAction(PlayerMoving, PlayerStanding),
+      MenuAction(..),
+      Inventory(bagTexture, areaInfo),
+      GameState(GameInventory, GameMenu, GameStateArea) )
 import OutputHandles.Types
-import OutputHandles.Draw
-import InputState
+    ( Color(Red, Blue),
+      Draw(Draw),
+      Draws,
+      TextDisplay(TextDisplay),
+      TextureEntry(textureWidth, textureHeight, texture),
+      ToRender(ToRender) )
+import OutputHandles.Draw ( mkRect )
+import InputState ( Direction(..) )
 
-import Debug.Trace
+import Debug.Trace ()
 
 drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws

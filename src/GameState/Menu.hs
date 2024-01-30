@@ -4,6 +4,6 @@ module GameState.Menu
     where
 
 
-import GameState.Types
+import GameState.Types ()
 
 
