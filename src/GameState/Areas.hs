@@ -208,5 +208,5 @@ collisionItemCheck gs player =
                 items' = M.adjust (const item {itemPosition=Nothing}) a is
                 cm' = delete ahb t
                 pState = playerState p
-                player' = p { playerState = pState { playerItems = M.insertWith (+) (itemType (itemInfo item)) 1 (playerItems pState) }}
+                player' = p { playerState = pState { playerItems = M.insertWith (+) (itemInfo item) 1 (playerItems pState) }}
             in (items', cm', player')

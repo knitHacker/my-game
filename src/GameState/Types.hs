@@ -18,20 +18,20 @@ module GameState.Types
     , NPCManager(..)
     ) where
 
-import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad ()
+import Control.Monad.IO.Class ()
 import qualified Data.Map.Strict as M
-import Data.Unique
-import Data.Word
+import Data.Unique ( Unique )
+import Data.Word ( Word32 )
 import qualified Data.Text as T
 
-import Configs
-import InputState
-import OutputHandles.Types
-import GameState.Collision.RTree
-import GameState.Collision.BoundBox
+import Configs ( CharacterMovement, CharacterHitBoxes )
+import InputState ( Direction )
+import OutputHandles.Types ( TextureEntry, TextDisplay )
+import GameState.Collision.RTree ( RTree )
+import GameState.Collision.BoundBox ( BoundBox )
 
-import Utils
+import Utils ()
 
 -- Top level game state
 --  Game menu is a menu with different options
@@ -45,7 +45,6 @@ data GameState =
 
 data Inventory = Inventory
     { areaInfo :: GameArea
-    , invCursor :: MenuCursor
     , bagTexture :: TextureEntry
     }
 
@@ -134,7 +133,7 @@ data PlayerConfig = PlayerCfg
 data PlayerState = PlayerState
     { playerPosition :: (Int, Int)
     , playerAction :: PlayerAction
-    , playerItems :: M.Map T.Text Int
+    , playerItems :: M.Map Item Int
     }
 
 -- Player information
@@ -152,6 +151,12 @@ data Item = Item
     , itemHb :: BoundBox
     , itemType :: T.Text
     }
+
+instance Eq Item where
+    (==) i1 i2 = (itemType i1) == (itemType i2)
+
+instance Ord Item where
+    compare i1 i2 = compare (itemType i1) (itemType i2)
 
 instance Show Item where
     show = show . itemType

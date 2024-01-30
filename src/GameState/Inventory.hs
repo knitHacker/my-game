@@ -11,9 +11,8 @@ import OutputHandles.Types
 import InputState
 
 initInventory :: OutputHandles -> GameArea -> Inventory
-initInventory outs area = Inventory area (MenuCursor 0 arrowEntry) bagEntry
+initInventory outs area = Inventory area bagEntry
     where
-        arrowEntry = textures outs M.! "green_arrow"
         bagEntry = textures outs M.! "bag"
 
 updateGameInventory :: InputState -> Inventory -> GameState

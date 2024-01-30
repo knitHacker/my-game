@@ -12,6 +12,7 @@ import Control.Monad
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
+import qualified Data.Text as T
 
 import Configs
 import GameState
@@ -190,11 +191,20 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
                         GameStartMenu -> ("Return to Main Menu", 100, 80)
 
 updateInventory :: GameConfigs -> Inventory -> ToRender
-updateInventory cfgs inv = current <> ToRender draws []
+updateInventory cfgs inv = current <> ToRender draws' texts
     where
         bagE = bagTexture inv
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
         draws = M.singleton (1, 100, 0, 0) (Draw (texture bagE) 0 0 (fromIntegral boardWidth) (fromIntegral boardHeight) Nothing)
+        (draws', texts) = if M.size itemMap > 0
+                    then (itemDraw, numText)
+                    else (draws, [])
+        itemDraw = M.insert (2,1,1,1) (Draw (texture $ itemTexture $ item) (fromIntegral itemX) (fromIntegral itemY) 50 50 Nothing) draws
+        numText = [TextDisplay (T.pack (show count)) (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) 10 20 Red]
         area = areaInfo inv
         current = updateAreaWindow cfgs area
+        itemMap = playerItems $ playerState $ gameStatePlayer area
+        (item, count) = head $ M.assocs itemMap
+        itemX = boardWidth `div` 2 - 25
+        itemY = boardHeight `div` 2 - 25
