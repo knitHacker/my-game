@@ -201,7 +201,10 @@ updateInventory cfgs inv = current <> ToRender draws' texts
                     then (itemDraw, numText)
                     else (draws, [])
         itemDraw = M.insert (2,1,1,1) (Draw (texture $ itemTexture $ item) (fromIntegral itemX) (fromIntegral itemY) 50 50 Nothing) draws
-        numText = [TextDisplay (T.pack (show count)) (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) 10 20 Red]
+        numText = [TextDisplay countStr (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) (fromIntegral (10 * (T.length countStr))) 20 Red
+                  , TextDisplay itemStr (fromIntegral (itemX - 15)) (fromIntegral (itemY - 25)) (fromIntegral (10 * (T.length itemStr))) 20 Red]
+        countStr = T.pack $ show count
+        itemStr = itemType item
         area = areaInfo inv
         current = updateAreaWindow cfgs area
         itemMap = playerItems $ playerState $ gameStatePlayer area
