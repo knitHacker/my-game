@@ -3,26 +3,44 @@ module GameState.Areas.Outside
     ( initOutsideArea
     ) where
 
-import Control.Monad
+import Control.Monad ( replicateM )
 import Configs
-import InputState
+    ( AreaCfg(barriers),
+      BarrierCfg(mainHitBox),
+      CharacterCfg(charHitBox, charMovement),
+      GameConfigs(characters, items, areas, barrier_definitions),
+      ItemCfg(itemHitBox),
+      PositionCfg(x, y) )
+import InputState ( Direction(DDown) )
 import GameState.Types
+    ( Background(Background, backCollisions, backArea),
+      ItemManager,
+      ItemState(ItemState),
+      Item(Item, itemHb, itemTexture),
+      Player(Player),
+      PlayerState(PlayerState),
+      PlayerConfig(PlayerCfg),
+      NPCManager(NPCManager),
+      GameArea(GameArea),
+      PlayerAction(PlayerStanding) )
 import OutputHandles.Types
-import GameState.Collision
+    ( OutputHandles(textures),
+      TextureEntry(textureWidth, textureHeight) )
+import GameState.Collision ()
 
 import qualified Data.Text as T
 import qualified SDL
 
-import Utils
+import Utils ( randomValue )
 
 import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
-import Control.Monad.IO.Class
-import Data.Unique
+import Control.Monad.IO.Class ( MonadIO )
+import Data.Unique ( Unique, hashUnique, newUnique )
 
-import GameState.Collision.BoundBox
-import GameState.Collision.RTree
+import GameState.Collision.BoundBox ( translate )
+import GameState.Collision.RTree ( getCollision, insert, RTree )
 
 
 mainCharName :: T.Text
@@ -108,7 +126,7 @@ initBackground gCfgs outs = do
     return $ Background backT 0 0 barrs cm
     where
         name = "outside"
-        areaCfg = M.toList $ barriers ((areas gCfgs) ! name)
+        areaCfg = M.toList $ barriers (areas gCfgs ! name)
         backT = textures outs ! name
         barrCfgs = barrier_definitions gCfgs
 

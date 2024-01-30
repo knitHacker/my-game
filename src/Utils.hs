@@ -3,8 +3,8 @@ module Utils
     ) where
 
 
-import Control.Monad.IO.Class
-import System.Random
+import Control.Monad.IO.Class ( MonadIO )
+import System.Random ( Random, randomRIO )
 
 
 randomValue :: (Random a, MonadIO m) => a -> a -> m a

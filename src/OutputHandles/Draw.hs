@@ -10,18 +10,24 @@ module OutputHandles.Draw
     ) where
 
 
-import Foreign.C.Types
+import Foreign.C.Types ( CInt )
 import qualified SDL
-import SDL.Vect
+import SDL.Vect ()
 import SDL                    (($=))
 import qualified SDL.Font as Font
-import Control.Monad
+import Control.Monad ( when )
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 
 import Configs
-import GameState
+    ( ConfigsRead(readConfigs), GameConfigs(debugOutlineTexture) )
 import OutputHandles.Types
+    ( Color(..),
+      Draw(..),
+      OutputHandles(renderer, ratioX, ratioY, font),
+      OutputRead(..),
+      TextDisplay(..),
+      ToRender(draws, drawWords) )
 
 
 

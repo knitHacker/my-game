@@ -6,25 +6,31 @@ module OutputHandles
     ) where
 
 
-import Foreign.C.Types
+import Foreign.C.Types ()
 import qualified SDL
 import qualified SDL.Image
-import SDL.Vect
+import SDL.Vect ( V2(V2) )
 import SDL                    (($=))
 import qualified SDL.Font as Font
-import Control.Monad
+import Control.Monad ()
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import qualified Data.Text as T
-import System.Directory
+import System.Directory ()
 import Data.Maybe (catMaybes)
 
-import Paths_my_game
+import Paths_my_game ()
 import Configs
-import GameState
-import GameState.Draw
+    ( Configs(textureCfgs, gameCfgs),
+      ConfigsRead,
+      GameConfigs(windowSizeX, windowSizeY, boardSizeX, boardSizeY),
+      TextureCfg(file, sizeX, sizeY) )
 import OutputHandles.Types
-import OutputHandles.Draw
+    ( OutputHandles(OutputHandles, font, renderer, window),
+      OutputRead,
+      TextureEntry(TextureEntry),
+      ToRender )
+import OutputHandles.Draw ( drawAll, initWindow )
 import Env.Files            (getGameFullPath)
 
 
@@ -81,4 +87,4 @@ cleanupOutputHandles outs = do
 
 
 executeDraw :: (MonadIO m, OutputRead m, ConfigsRead m) => ToRender -> m ()
-executeDraw draws = drawAll draws
+executeDraw = drawAll

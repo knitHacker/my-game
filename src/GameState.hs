@@ -5,31 +5,35 @@ module GameState
     , updateGameState
     ) where
 
-import Control.Monad
-import Configs
+import Control.Monad ()
+import Configs ( ConfigsRead(readConfigs), GameConfigs )
 import InputState
+    ( enterJustPressed,
+      Direction(DDown, DUp),
+      InputRead(..),
+      InputState(inputRepeat, inputStateDirection) )
 import GameState.Types
-import GameState.Areas
-import GameState.Areas.Outside
-import GameState.Menu.MainMenu
-import GameState.Menu.PauseMenu
-import GameState.Inventory
-import OutputHandles.Types
-import GameState.Collision.RTree
-import GameState.Collision.BoundBox
+    ( GameStateRead(..),
+      GameArea,
+      MenuCursor(MenuCursor, cursorPos),
+      Menu(Menu, cursor, options),
+      MenuAction(GameContinue, GameStart, GameExit, GameStartMenu),
+      GameState(..) )
+import GameState.Areas ( updateArea )
+import GameState.Areas.Outside ( initOutsideArea )
+import GameState.Menu.MainMenu ( initMainMenu )
+import GameState.Inventory ( updateGameInventory )
+import OutputHandles.Types ( OutputHandles, OutputRead(..) )
 
 import qualified Data.Text as T
 import qualified SDL
 
-import Utils
+import Utils ( randomValue )
 
 import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
-import Control.Monad.IO.Class
-import Data.Unique
-
-import Debug.Trace
+import Control.Monad.IO.Class ( MonadIO(..) )
 
 initGameState :: GameConfigs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do

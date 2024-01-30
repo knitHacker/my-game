@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 module GameState.Collision.RTree
     (RTree
     , empty
@@ -12,12 +13,13 @@ module GameState.Collision.RTree
     ) where
 
 import GameState.Collision.BoundBox
+    ( BoundBox, union, area, contains, intersect, relationship )
 import Prelude hiding (lookup)
-import Data.Maybe
+import Data.Maybe ( isJust )
 import Data.List (sortOn)
 import Data.Monoid (Monoid)
 
-import Debug.Trace
+import Debug.Trace ()
 
 data RTree a =
       Empty
@@ -25,11 +27,13 @@ data RTree a =
     deriving (Show, Eq)
 
 instance Semigroup (RTree a) where
+    (<>) :: RTree a -> RTree a -> RTree a
     (<>) Empty t = t
     (<>) t Empty = t
     (<>) (RTree lt) (RTree rt) = RTree $ merge' lt rt
 
 instance Monoid (RTree a) where
+    mempty :: RTree a
     mempty = Empty
 
 data InRTree a =
@@ -179,10 +183,10 @@ splitNode5 t1 t2 t3 t4 t5
         bb3 = getBB t3
         bb4 = getBB t4
         bb5 = getBB t5
-        nbb1 = union bb1 bb2
+        nbb1 = bb1 `union` bb2
         nbb2 = union bb3 $ union bb4 bb5
         nbb1' = union bb1 $ union bb2 bb3
-        nbb2' = union bb4 bb5
+        nbb2' = bb4 `union` bb5
 
 nodeContains :: InRTree a -> BoundBox -> Bool
 nodeContains (Leaf bb _) bb' = bb `contains` bb'
@@ -193,7 +197,7 @@ getBB (Leaf bb _) = bb
 getBB (Node bb _) = bb
 
 unionChildren :: [InRTree a] -> BoundBox
-unionChildren (ch:tl) = foldl (\bb c -> union bb (getBB c)) (getBB ch) tl
+unionChildren (ch:tl) = foldl (\bb c -> bb `union` getBB c) (getBB ch) tl
 
 toList :: RTree a -> [(BoundBox, a)]
 toList Empty = []
@@ -201,7 +205,7 @@ toList (RTree a) = toList' a
 
 toList' :: InRTree a -> [(BoundBox, a)]
 toList' (Leaf b a) = [(b, a)]
-toList' (Node _ nt) = concat $ toList' <$> getChildren nt
+toList' (Node _ nt) = concatMap toList' (getChildren nt)
 
 
 empty :: RTree a
@@ -217,7 +221,7 @@ depth (RTree t) = depth' t
 
 depth' :: InRTree a -> Int
 depth' (Leaf _ _) = 1
-depth' (Node _ t) = 1 + (depth' $ getFirst t)
+depth' (Node _ t) = 1 + depth' (getFirst t)
 
 singleton :: BoundBox -> a -> RTree a
 singleton bb d = RTree $ Leaf bb d
@@ -231,9 +235,9 @@ node' [_]       = error "node': too few children"
 node' _         = error "node': too many children"
 
 node :: [InRTree a] -> InRTree a
-node [x, y]         = Node (union (getBB x) (getBB y)) $ RTNode2 x y
-node [x, y, z]      = Node (union (getBB x) (union (getBB y) (getBB z))) $ RTNode3 x y z
-node [x, y, z, w]   = Node (union (getBB x) (union (getBB y) (union (getBB z) (getBB w)))) $ RTNode4 x y z w
+node [x, y]         = Node (getBB x `union` getBB y) $ RTNode2 x y
+node [x, y, z]      = Node (getBB x `union` (getBB y `union` getBB z)) $ RTNode3 x y z
+node [x, y, z, w]   = Node (getBB x `union` (getBB y `union` (getBB z `union` getBB w))) $ RTNode4 x y z w
 node [x]            = x
 node _              = error "node: wrong number of children"
 
@@ -315,11 +319,11 @@ getIntersections bb (RTree t) = getIntersections' bb t
 
 getIntersections' :: BoundBox -> InRTree a -> [BoundBox]
 getIntersections' bb (Leaf bb' a) =
-    case intersect bb bb' of
+    case bb `intersect` bb' of
         (Just intersect) -> [intersect]
         Nothing -> []
 getIntersections' bb (Node bb' nt)
-    | isJust $ intersect bb bb' = concat $ getIntersections' bb <$> getChildren nt
+    | isJust $ intersect bb bb' = concatMap (getIntersections' bb) (getChildren nt)
     | otherwise = []
 
 
@@ -335,7 +339,7 @@ getCollisionBB' bb (Leaf bb' a)
     where
         rel = relationship bb bb'
 getCollisionBB' bb (Node bb' nt)
-    | isJust $ intersect bb bb' = concat $ getCollisionBB' bb <$> getChildren nt
+    | isJust $ intersect bb bb' = concatMap (getCollisionBB' bb) (getChildren nt)
     | otherwise = []
 
 
@@ -350,7 +354,7 @@ getCollision' bb (Leaf bb' a)
     where
         rel = relationship bb bb'
 getCollision' bb (Node bb' nt)
-    | isJust $ intersect bb bb' = concat $ getCollision' bb <$> getChildren nt
+    | isJust $ intersect bb bb' = concatMap (getCollision' bb) (getChildren nt)
     | otherwise = []
 
 
@@ -374,7 +378,7 @@ delete'' :: BoundBox -> TreeNode a -> TreeDelete a
 delete'' bb tn
     | length combined > 1 && length combined <= 4 = DTree $ node combined
     | length combined < 2 && length fstSplit >= 2 = DTree $ node fstSplit
-    | otherwise = Orphans $ concat $ toList' <$> combined
+    | otherwise = Orphans $ concatMap toList' combined
     where
         children = getChildren tn
         (dChildren, dOrphs) = foldl getChilds ([], []) children
@@ -384,7 +388,7 @@ delete'' bb tn
         trySplit (h:tl) =
             case splitTry h of
                 (Split lt rt) -> [lt, rt] ++ tl
-                (NoSplit _) -> h : (trySplit tl)
+                (NoSplit _) -> h : trySplit tl
         getChilds (ts, orphs) c = case delete' bb c of
                                     DEmpty -> (ts, orphs)
                                     (Orphans os) -> (ts, orphs++os)

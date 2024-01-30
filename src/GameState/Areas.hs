@@ -7,16 +7,38 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 
 import Configs
+    ( CharacterMovement(moveStep, stepRate),
+      GameConfigs(boardSizeX, boardSizeY) )
 import InputState
+    ( escapeJustPressed,
+      iPressed,
+      Direction(..),
+      InputState(inputTimestamp, inputStateDirection) )
 import OutputHandles.Types
-import GameState.Collision.BoundBox
-import GameState.Collision.RTree
+    ( OutputHandles, TextureEntry(textureWidth, textureHeight) )
+import GameState.Collision.BoundBox ( union, BoundBox(BB) )
+import GameState.Collision.RTree ( delete, getCollisionBB )
 import GameState.Player
+    ( getBoundBox,
+      getDirection,
+      getPlayerHitbox,
+      movePlayer,
+      playerMove )
 import GameState.Types
-import GameState.Menu.PauseMenu
-import GameState.Inventory
+    ( Background(backArea, backXOffset, backYOffset),
+      ItemState(itemPosition, itemInfo),
+      Player(..),
+      PlayerState(playerAction, playerPosition, playerItems),
+      PlayerConfig(playerTexture, playerMoveCfgs, playerHitBoxes),
+      NPCManager(NPCManager),
+      GameArea(gameStateNPCs, background, gameStatePlayer,
+               gameStateItemManager, collisionMap),
+      PlayerMovement(PlayerMove),
+      PlayerAction(PlayerMoving, PlayerStanding),
+      GameState(GameStateArea, GameMenu, GameInventory) )
+import GameState.Menu.PauseMenu ( initPauseMenu )
+import GameState.Inventory ( initInventory )
 
-import Debug.Trace
 
 updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area

@@ -118,7 +118,7 @@ relationship b1@(BB x1 y1 x2 y2) b2@(BB x1' y1' x2' y2')
     | b1 == b2 = Same
     | contains b1 b2 = Contains
     | contains b2 b1 = Inside
-    | otherwise = case intersect b1 b2 of
+    | otherwise = case b1 `intersect` b2 of
         Nothing
             | isLeft && isAbove -> Diagonal LeftOf Above (x1' - x2) (y1 - y2')
             | isLeft && isBelow -> Diagonal LeftOf Below (x1' - x2) (y2 - y1')

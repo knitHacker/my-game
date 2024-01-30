@@ -16,8 +16,7 @@ import qualified SDL
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Word (Word32)
 import Data.Time.Clock.System
-
-import Debug.Trace
+    ( SystemTime(systemNanoseconds), getSystemTime )
 
 data Direction
     = DUp

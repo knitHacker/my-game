@@ -74,7 +74,8 @@ getBoundBox dir hbs =
     frontHb = frontHitbox hbs
 
 movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
-movePlayer back player@(Player cfg state) dir ts f (newX, newY) = player {playerState = state {playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
+movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
+  player {playerState = state {playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
   where
     newPos = foldl movePlayer' (newX, newY) collisions
     (oldX, oldY) = playerPosition state
@@ -86,7 +87,7 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) = player {player
     playerT = playerTexture cfg
     playerWidth = textureWidth playerT
     playerBB = translate newX newY hb
-    movementBB = union oldPlayerBB playerBB
+    movementBB = oldPlayerBB `union` playerBB
     movePlayer' (x, y) b@(BB x1 y1 x2 y2) =
       case dir of
         DUp -> (x, y + (y2 - y1))
