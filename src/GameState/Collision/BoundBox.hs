@@ -14,6 +14,7 @@ module GameState.Collision.BoundBox
     , relationship
     , overlap
     , translate
+    , distance
     ) where
 
 
@@ -86,6 +87,11 @@ isPointBB (BB x1 y1 x2 y2) = (x1 == x2) && (y1 == y2)
 
 union :: BoundBox -> BoundBox -> BoundBox
 union (BB x1 y1 x2 y2) (BB x3 y3 x4 y4) = BB (min x1 x3) (min y1 y3) (max x2 x4) (max y2 y4)
+
+distance :: (Int, Int) -> (Int, Int) -> Int
+distance (x1, y1) (x2, y2) = sqrtInt $ (x2 - x1)^2 + (y2 - y1)^2
+    where
+        sqrtInt = floor . sqrt . fromIntegral
 
 area :: BoundBox -> Int
 area (BB x1 y1 x2 y2) = (x2 - x1) * (y2 - y1)

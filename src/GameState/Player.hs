@@ -5,6 +5,7 @@ module GameState.Player
     getPlayerHitbox,
     newPosition,
     movePlayer,
+    playerMove,
   )
 where
 
@@ -118,7 +119,7 @@ playerMove back player@(Player cfg state) dir mvAmt = (dir, newPos)
     movementBB = oldPlayerBB `union` playerBB
     movePlayer' (x, y) b@(BB x1 y1 x2 y2) =
       case dir of
-        DUp -> (x, min y (y + (y2 - y1)))
-        DDown -> (x, max y (y - (y2 - y1)))
-        DLeft -> (min x (x + (x2 - x1)), y)
-        DRight -> (max x (x - (x2 - x1)), y)
+        DUp -> (x, max y (y + (y2 - y1)))
+        DDown -> (x, min y (y - (y2 - y1)))
+        DLeft -> (max x (x + (x2 - x1)), y)
+        DRight -> (min x (x - (x2 - x1)), y)

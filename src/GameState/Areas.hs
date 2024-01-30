@@ -123,43 +123,54 @@ followPlayer ts back player p@(Player cfgs state) =
     where
         rate = stepRate $ playerMoveCfgs cfgs
         targetM = followTarget back player p
-        updateFollow pos dir f = movePlayer back p dir ts f pos
-            -- let 
-            --     movement = PlayerMoving (PlayerMove dir ts f)
-            -- in p {playerState = state {playerPosition = pos, playerAction = movement}}
+        updateFollow pos dir f = -- movePlayer back p dir ts f pos
+            let 
+                movement = PlayerMoving (PlayerMove dir ts f)
+            in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
 followTarget :: Background -> Player -> Player -> Maybe (Direction, (Int, Int))
 followTarget back player follow
     -- already in the target location but facing a different direction than the player so change facing direction
-    | leftDiff == 0 && upDiff == 0 && dir /= nDir = Just (dir, newPosition follow (Just 0) dir)
+    | leftDiff' == 0 && upDiff' == 0 && dir /= nDir = Just (dir, (folX, folY))
     -- already in the target location so don't move
-    | leftDiff == 0 && upDiff == 0 = Nothing
-    | otherwise = undefined
+    | leftDiff' == 0 && upDiff'== 0 = Nothing
     -- left direction is furthest from the target so move left
-    -- | leftDiff >= rightDiff && downDiff >= upDiff = Just (DLeft, newPosition follow (Just leftDiff) DLeft, DDown, newPosition follow (Just downDiff) DDown)
+    | leftDiff' >= rightDiff' && leftDiff' >= downDiff' && leftDiff' >= upDiff' = Just (DLeft, leftMove)
     -- right direction is furthest from the target so move right
-    -- | rightDiff >= upDiff && rightDiff >= downDiff = Just (DRight, newPosition follow (Just rightDiff) DRight)
+    | rightDiff' >= upDiff' && rightDiff' >= downDiff' = Just (DRight, rightMove)
     -- up direction is furthest from the target so move up
-    -- | upDiff >= downDiff = Just (DUp, newPosition follow (Just upDiff) DUp)
+    | upDiff' >= downDiff' = Just (DUp, upMove)
     -- only other option is down direction is furthest from the target so move down
-    -- | otherwise = Just (DDown, newPosition follow (Just downDiff) DDown)
+    | otherwise = Just (DDown, downMove)
     where
-        leftDiff = folX - targetX
-        rightDiff = targetX - folX
-        upDiff = folY - targetY
-        downDiff = targetY - folY
+        leftDiff = folX - targetX'
+        rightDiff = targetX' - folX
+        upDiff = folY - targetY'
+        downDiff = targetY' - folY
+        (_, leftMove) = playerMove back follow DLeft leftDiff
+        leftDiff' = folX - (fst leftMove)
+        (_, rightMove) = playerMove back follow DRight rightDiff
+        rightDiff' = (fst rightMove) - folX
+        (_, upMove) = playerMove back follow DUp upDiff
+        upDiff' = folY - (snd upMove)
+        (_, downMove) = playerMove back follow DDown downDiff
+        downDiff' = (snd downMove) - folY
         (folX, folY) = playerPosition $ playerState follow
         (BB folXLeft folYUp folXRight folYDown) = getBoundBox dir $ playerHitBoxes $ playerCfgs follow
         dir = getDirection player
         nDir = getDirection follow
         (pX, pY) = playerPosition $ playerState player
         (BB xLeft yUp xRight yDown)  = getBoundBox dir $ playerHitBoxes $ playerCfgs player
+        xMax = textureWidth $ backArea back
+        yMax = textureHeight $ backArea back
         (targetX, targetY) = case dir of
                                 DUp -> (pX - folXLeft + xLeft, pY + yDown + 15)
                                 DDown -> (pX - folXLeft, pY - 15)
                                 DLeft -> (pX + xRight + 15, pY + yDown - folYDown)
                                 DRight -> (pX - 15 - folXRight, pY + yDown - folYDown)
+        (targetX', targetY') = (min (xMax - folXRight) (max (-folXLeft) targetX)
+                               , min (yMax - folYDown) (max 0 targetY))
 
 
 updateBackground :: GameConfigs -> Background -> Player -> Background
