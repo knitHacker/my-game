@@ -126,7 +126,7 @@ insert' bb a (Node bb' (RTNode4 c1 c2 c3 c4)) =
                 (Split c3' c4') -> splitNode5 c1 c2 c3' c4' c4
         insertC4 =
             case insert' bb a c4 of
-                (NoSplit c4') -> NoSplit $ Node (union bb' bb) $ RTNode4 c1 c2 c3 c4'
+                (NoSplit c4') -> NoSplit $ Node (bb' `union` bb) $ RTNode4 c1 c2 c3 c4'
                 (Split c4' c5') -> splitNode5 c1 c2 c3 c4' c5'
 
 
