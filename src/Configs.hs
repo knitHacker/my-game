@@ -52,6 +52,8 @@ instance ToJSON TextureCfg
 data CharacterHitBoxes = CharHB
     { frontHitbox :: BoundBox
     , sideHitbox :: BoundBox
+    , pickupX :: Int
+    , pickupY :: Int
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON CharacterHitBoxes

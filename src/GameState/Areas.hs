@@ -12,6 +12,7 @@ import Configs
 import InputState
     ( escapeJustPressed,
       iPressed,
+      spacePressed,
       Direction(..),
       InputState(inputTimestamp, inputStateDirection) )
 import OutputHandles.Types
@@ -22,6 +23,7 @@ import GameState.Player
     ( getBoundBox,
       getDirection,
       getPlayerHitbox,
+      getPlayerPickupBox,
       movePlayer,
       playerMove )
 import GameState.Types
@@ -46,8 +48,8 @@ updateArea outs cfgs inputs area
     | iPressed inputs = GameInventory (initInventory outs area)
     | otherwise =
         case playerM of
-            Nothing -> updateArea' area cfgs Nothing (npcNext player)
-            Just p -> updateArea' area cfgs (Just p) (npcNext p)
+            Nothing -> updateArea' inputs area cfgs (Left player) (npcNext player)
+            Just p -> updateArea' inputs area cfgs (Right p) (npcNext p)
     where
         player = gameStatePlayer area
         npc = gameStateNPCs area
@@ -56,17 +58,20 @@ updateArea outs cfgs inputs area
         playerM = updatePlayer back inputs player
         npcNext p = updateNPC ts back p npc
 
-updateArea' :: GameArea -> GameConfigs -> Maybe Player -> Maybe NPCManager -> GameState
-updateArea' area cfgs pM nM =
-    case (pM, nM) of
-        (Nothing, Nothing) -> GameStateArea area False
-        (Nothing, Just n') -> GameStateArea (areaNPC n') True
-        (Just p', Nothing) ->
+updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> GameState
+updateArea' inputs area cfgs pM nM =
+    case (spacePressed inputs, pM, nM) of
+        (False, Left p, Nothing) -> GameStateArea area False
+        (True, Left p, _) ->
+            let a = areaColl area p
+            in GameStateArea a True
+        (False, Left _, Just n') -> GameStateArea (areaNPC n') True
+        (_, Right p', Nothing) ->
             let a = areaPlay p'
                 a' = areaColl a p'
                 b = backgroundNew a' p'
             in GameStateArea (a' { background = b}) True
-        (Just p', Just n') ->
+        (_, Right p', Just n') ->
             let a = areaBoth p' n'
                 a' = areaColl a p'
                 b = backgroundNew a' p'
@@ -75,7 +80,7 @@ updateArea' area cfgs pM nM =
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl = collisionItemCheck
+        areaColl a p = if spacePressed inputs then collisionItemCheck a p else a
         backgroundNew area' = updateBackground cfgs (background area')
 
 
@@ -146,7 +151,7 @@ followPlayer ts back player p@(Player cfgs state) =
         rate = stepRate $ playerMoveCfgs cfgs
         targetM = followTarget back player p
         updateFollow pos dir f = -- movePlayer back p dir ts f pos
-            let 
+            let
                 movement = PlayerMoving (PlayerMove dir ts f)
             in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
@@ -220,8 +225,8 @@ collisionItemCheck gs player =
             in gs { gameStatePlayer = player', gameStateItemManager = items', collisionMap = cm' }
     where
         oldPlayer = gameStatePlayer gs
-        oldHb = getPlayerHitbox oldPlayer
-        hb = getPlayerHitbox player
+        oldHb = getPlayerPickupBox oldPlayer
+        hb = getPlayerPickupBox player
         hb' = union oldHb hb
         cm = collisionMap gs
         items = gameStateItemManager gs

@@ -9,6 +9,7 @@ module InputState
     , enterPressed
     , enterJustPressed
     , iPressed
+    , spacePressed
     , moveInputPressed
     ) where
 
@@ -17,6 +18,8 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Word (Word32)
 import Data.Time.Clock.System
     ( SystemTime(systemNanoseconds), getSystemTime )
+
+import Debug.Trace
 
 data Direction
     = DUp
@@ -29,6 +32,7 @@ data KeyPress
     = EnterPress
     | EscapePress
     | IPress
+    | SpacePress
     deriving (Show, Eq)
 
 
@@ -68,6 +72,10 @@ iPressed :: InputState -> Bool
 iPressed (InputState _ _ (Just IPress) _ _) = True
 iPressed _ = False
 
+spacePressed :: InputState -> Bool
+spacePressed (InputState _ _ (Just SpacePress) _ _) = True
+spacePressed _ = False
+
 moveInputPressed :: InputState -> Bool
 moveInputPressed (InputState _ (Just _) _ _ _) = True
 moveInputPressed _ = False
@@ -104,5 +112,6 @@ getKey (SDL.KeyboardEventData _ SDL.Pressed repeat keysym) =
     SDL.KeycodeRight  -> Just (repeat, Right DRight)
     SDL.KeycodeReturn -> Just (repeat, Left EnterPress)
     SDL.KeycodeEscape -> Just (repeat, Left EscapePress)
+    SDL.KeycodeSpace  -> Just (repeat, Left SpacePress)
     SDL.KeycodeI      -> Just (repeat, Left IPress)
     _                 -> Nothing
