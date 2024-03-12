@@ -3,6 +3,7 @@ module GameState.Player
     getDirection,
     getBoundBox,
     getPlayerHitbox,
+    getPlayerPickupBox,
     newPosition,
     movePlayer,
     playerMove,
@@ -11,7 +12,7 @@ where
 
 import Configs
     ( CharacterMovement(moveStep),
-      CharacterHitBoxes(sideHitbox, frontHitbox) )
+      CharacterHitBoxes(sideHitbox, frontHitbox, pickupX, pickupY) )
 import Data.Word (Word32)
 import GameState.Collision.BoundBox
     ( BoundBox(BB), union, translate )
@@ -60,6 +61,21 @@ getPlayerHitbox p@(Player cfg state) = translate x y hb
   where
     dir = getDirection p
     hb = getBoundBox dir $ playerHitBoxes cfg
+    (x, y) = playerPosition state
+
+getPlayerPickupBox :: Player -> BoundBox
+getPlayerPickupBox p@(Player cfg state) = translate x y hb
+  where
+    dir = getDirection p
+    pHB = playerHitBoxes cfg
+    BB hx1 hy1 hx2 hy2 = getBoundBox dir pHB
+    pickX = pickupX pHB
+    pickY = pickupY pHB
+    hb = case dir of
+      DUp -> BB hx1 (hy1 - pickY) hx2 hy2
+      DDown -> BB hx1 hy1 hx2 (hy2 + pickY)
+      DLeft -> BB (hx1 - pickX) hy1 hx2 hy2
+      DRight -> BB hx1 hy1 (hx2 + pickX) hy2
     (x, y) = playerPosition state
 
 getBoundBox :: Direction -> CharacterHitBoxes -> BoundBox
