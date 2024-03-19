@@ -149,6 +149,7 @@ data Player = Player
 --  What the item is
 data Item = Item
     { itemTexture :: TextureEntry
+    , highlightTexture :: TextureEntry
     , itemHb :: BoundBox
     , itemType :: T.Text
     }

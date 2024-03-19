@@ -126,7 +126,7 @@ drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draw
 
 drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
 drawItem _ _ _ _ d (ItemState _ Nothing) = d
-drawItem xStart yStart width height d (ItemState (Item tE _ _) (Just (xPos, yPos)))
+drawItem xStart yStart width height d (ItemState (Item tE tH _ _ ) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where

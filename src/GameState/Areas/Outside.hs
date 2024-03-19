@@ -84,10 +84,12 @@ initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
+    return $ insertItems uniqs bars cm (Item mushroomEntry hightlightEntry hb itemName) itemPos
     where
         itemName = "mushroom"
+        highlightName = itemName `T.append` "_highlight"
         mushroomEntry = textures outs ! itemName
+        hightlightEntry = textures outs ! highlightName
         hb = itemHitBox $ items cfgs ! itemName
         bars = backCollisions back
         backT = backArea back
