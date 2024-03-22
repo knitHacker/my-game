@@ -13,6 +13,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import qualified Data.Text as T
+import Data.Unique ( Unique )
 
 import Configs
     ( ConfigsRead(readConfigs), GameConfigs(boardSizeX, boardSizeY) )
@@ -21,6 +22,7 @@ import GameState.Types
     ( Background(backArea, backXOffset, backYOffset, backBarriers),
       ItemState(ItemState),
       Item(Item, itemTexture, itemType),
+      ItemManager(..),
       Player(playerCfgs, playerState),
       PlayerState(playerPosition, playerAction, playerItems),
       PlayerConfig(playerTexture),
@@ -116,23 +118,27 @@ getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
 drawItems :: Draws -> GameConfigs -> GameArea -> Draws
-drawItems draws cfgs gs = foldl (drawItem xOff yOff boardWidth boardHeight) draws (M.elems (gameStateItemManager gs))
+drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWidth boardHeight) draws (M.assocs (itemMap im))
     where
+        im = gameStateItemManager gs
         back = background gs
         xOff = backXOffset back
         yOff = backYOffset back
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
 
-drawItem :: Int -> Int -> Int -> Int -> Draws -> ItemState -> Draws
-drawItem _ _ _ _ d (ItemState _ Nothing) = d
-drawItem xStart yStart width height d (ItemState (Item tE tH _ _ ) (Just (xPos, yPos)))
+drawItem :: Maybe Unique -> Int -> Int -> Int -> Int -> Draws -> (Unique, ItemState) -> Draws
+drawItem _ _ _ _ _ d (_, ItemState _ Nothing) = d
+drawItem hKey xStart yStart width height d (key, ItemState (Item tE tEh _ _ ) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
-        t = texture tE
-        tW = textureWidth tE
-        tH = textureHeight tE
+        tE' = case hKey of
+                Just hk -> if hk == key then tEh else tE
+                Nothing -> tE
+        t = texture tE'
+        tW = textureWidth tE'
+        tH = textureHeight tE'
         w = fromIntegral tW
         h = fromIntegral tH
         xPos' = fromIntegral (xPos - xStart)
