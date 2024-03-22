@@ -129,7 +129,7 @@ drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWi
 
 drawItem :: Maybe Unique -> Int -> Int -> Int -> Int -> Draws -> (Unique, ItemState) -> Draws
 drawItem _ _ _ _ _ d (_, ItemState _ Nothing) = d
-drawItem hKey xStart yStart width height d (key, ItemState (Item tE tEh _ _ ) (Just (xPos, yPos)))
+drawItem hKey xStart yStart width height d (key, ItemState (Item tE tEh _ _ _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where

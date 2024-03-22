@@ -68,6 +68,7 @@ library
       GameState.Collision.RTree
       GameState.Draw
       GameState.Inventory
+      GameState.Item
       GameState.Menu
       GameState.Menu.MainMenu
       GameState.Menu.PauseMenu

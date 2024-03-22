@@ -39,6 +39,7 @@ import GameState.Player
     )
 import GameState.Types
     ( Background(..)
+    , Item(..)
     , ItemState(..)
     , Player(..)
     , PlayerState(..)
@@ -96,7 +97,7 @@ updateArea' inputs area cfgs pM nM =
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl a p = collisionItemCheck a p sP
+        areaColl a p = collisionItemCheck a p inputs
         backgroundNew area' = updateBackground cfgs (background area')
 
 
@@ -232,13 +233,14 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
             | otherwise = playerPos - div window 2
 
 
-collisionItemCheck :: GameArea -> Player -> Bool -> GameArea
-collisionItemCheck gs player sP =
+collisionItemCheck :: GameArea -> Player -> InputState -> GameArea
+collisionItemCheck gs player inputs =
     case getCollisionBB hb' cm of
         [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
-        collisions ->
-            let (items', cm', player') = updateObject (items, cm, player) $ head collisions
-            in gs { gameStatePlayer = player', gameStateItemManager = items', collisionMap = cm' }
+        collisions -> 
+            let fstColl@(_, itemId) = head collisions -- TODO: most overlapped one instead of first?
+                itemState = itemMap items ! itemId
+            in itemOnCollision (itemInfo itemState) gs inputs fstColl
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
@@ -246,12 +248,3 @@ collisionItemCheck gs player sP =
         hb' = oldHb `union` hb
         cm = collisionMap gs
         items = gameStateItemManager gs
-        updateObject (is, t, p) (ahb, a) =
-            let im = itemMap is
-                item = itemMap is ! a
-                items' = M.adjust (const item {itemPosition=Nothing}) a im
-                cm' = if sP then delete ahb t else t
-                pState = playerState p
-                player' = p { playerState = pState { playerItems = M.insertWith (+) (itemInfo item) 1 (playerItems pState) }}
-                is' = if sP then is { itemMap = items' } else is { itemHighlighted = Just a}
-            in (is', cm', if sP then player' else p)

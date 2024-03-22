@@ -42,6 +42,8 @@ import Data.Unique ( Unique, hashUnique, newUnique )
 import GameState.Collision.BoundBox ( translate )
 import GameState.Collision.RTree ( getCollision, insert, RTree )
 
+import GameState.Item
+
 
 mainCharName :: T.Text
 mainCharName = "main_character"
@@ -84,7 +86,7 @@ initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs bars cm (Item mushroomEntry hightlightEntry hb itemName) itemPos
+    return $ insertItems uniqs bars cm (Item mushroomEntry hightlightEntry hb itemName pickupOnCollision) itemPos
     where
         itemName = "mushroom"
         highlightName = itemName `T.append` "_highlight"

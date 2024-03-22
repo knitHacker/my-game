@@ -25,6 +25,7 @@ import qualified Data.Map.Strict as M
 import Data.Unique ( Unique )
 import Data.Word ( Word32 )
 import qualified Data.Text as T
+import InputState
 
 import Configs ( CharacterMovement, CharacterHitBoxes )
 import InputState ( Direction )
@@ -152,6 +153,7 @@ data Item = Item
     , highlightTexture :: TextureEntry
     , itemHb :: BoundBox
     , itemType :: T.Text
+    , itemOnCollision :: GameArea -> InputState -> (BoundBox, Unique) -> GameArea
     }
 
 instance Eq Item where
