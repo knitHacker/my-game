@@ -30,9 +30,14 @@
         "file": "assets/images/stump.png"
     },
     "mushroom": {
-        "sizeX": 6,
-        "sizeY": 6,
+        "sizeX": 7,
+        "sizeY": 7,
         "file": "assets/images/mushroom.png"
+    },
+    "mushroom_highlight": {
+        "sizeX": 8,
+        "sizeY": 8,
+        "file": "assets/images/mushroom_highlight.png"
     },
     "lavender": {
         "sizeX": 16,

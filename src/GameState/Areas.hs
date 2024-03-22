@@ -7,40 +7,53 @@ import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 
 import Configs
-    ( CharacterMovement(moveStep, stepRate),
-      GameConfigs(boardSizeX, boardSizeY) )
+    ( CharacterMovement(..)
+    , GameConfigs(..)
+    )
 import InputState
-    ( escapeJustPressed,
-      iPressed,
-      spacePressed,
-      Direction(..),
-      InputState(inputTimestamp, inputStateDirection) )
+    ( escapeJustPressed
+    , iPressed
+    , spacePressed
+    , Direction(..)
+    , InputState(..)
+    )
 import OutputHandles.Types
-    ( OutputHandles, TextureEntry(textureWidth, textureHeight) )
-import GameState.Collision.BoundBox ( union, BoundBox(BB) )
-import GameState.Collision.RTree ( delete, getCollisionBB )
+    ( OutputHandles
+    , TextureEntry(..)
+    )
+import GameState.Collision.BoundBox 
+    ( union
+    , BoundBox(BB)
+    )
+import GameState.Collision.RTree
+    ( delete
+    , getCollisionBB
+    )
 import GameState.Player
-    ( getBoundBox,
-      getDirection,
-      getPlayerHitbox,
-      getPlayerPickupBox,
-      movePlayer,
-      playerMove )
+    ( getBoundBox
+    , getDirection
+    , getPlayerHitbox
+    , getPlayerPickupBox
+    , movePlayer
+    , playerMove
+    )
 import GameState.Types
-    ( Background(backArea, backXOffset, backYOffset),
-      ItemState(itemPosition, itemInfo),
-      Player(..),
-      PlayerState(playerAction, playerPosition, playerItems),
-      PlayerConfig(playerTexture, playerMoveCfgs, playerHitBoxes),
-      NPCManager(NPCManager),
-      GameArea(gameStateNPCs, background, gameStatePlayer,
-               gameStateItemManager, collisionMap),
-      PlayerMovement(PlayerMove),
-      PlayerAction(PlayerMoving, PlayerStanding),
-      GameState(GameStateArea, GameMenu, GameInventory) )
+    ( Background(..)
+    , ItemState(..)
+    , Player(..)
+    , PlayerState(..)
+    , PlayerConfig(..)
+    , NPCManager(..)
+    , GameArea(..)
+    , PlayerMovement(..)
+    , PlayerAction(..)
+    , GameState(..)
+    , ItemManager(..)
+    )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
 
+import Debug.Trace
 
 updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
 updateArea outs cfgs inputs area
@@ -60,27 +73,30 @@ updateArea outs cfgs inputs area
 
 updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> GameState
 updateArea' inputs area cfgs pM nM =
-    case (spacePressed inputs, pM, nM) of
-        (False, Left p, Nothing) -> GameStateArea area False
-        (True, Left p, _) ->
+    case (pM, nM) of
+        (Left p, Nothing) -> 
             let a = areaColl area p
             in GameStateArea a True
-        (False, Left _, Just n') -> GameStateArea (areaNPC n') True
-        (_, Right p', Nothing) ->
+        (Left p, Just n') -> 
+            let a = areaNPC n'
+                a' = areaColl a p
+            in GameStateArea a' True
+        (Right p', Nothing) ->
             let a = areaPlay p'
                 a' = areaColl a p'
                 b = backgroundNew a' p'
             in GameStateArea (a' { background = b}) True
-        (_, Right p', Just n') ->
+        (Right p', Just n') ->
             let a = areaBoth p' n'
                 a' = areaColl a p'
                 b = backgroundNew a' p'
             in GameStateArea (a' { background = b }) True
     where
+        sP = spacePressed inputs
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl a p = if spacePressed inputs then collisionItemCheck a p else a
+        areaColl a p = collisionItemCheck a p sP
         backgroundNew area' = updateBackground cfgs (background area')
 
 
@@ -96,7 +112,7 @@ updatePlayer back inputs player@(Player cfgs state) =
             | otherwise -> Just (movePlayer back player iDir ts 0 (newPos iDir))
     where
         ts = inputTimestamp inputs
-        newPos newDir = newCharPosition back player newDir
+        newPos = newCharPosition back player
         rate = stepRate $ playerMoveCfgs cfgs
 
 
@@ -216,24 +232,26 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
             | otherwise = playerPos - div window 2
 
 
-collisionItemCheck :: GameArea -> Player -> GameArea
-collisionItemCheck gs player =
+collisionItemCheck :: GameArea -> Player -> Bool -> GameArea
+collisionItemCheck gs player sP =
     case getCollisionBB hb' cm of
-        [] -> gs { gameStatePlayer = player }
+        [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
         collisions ->
-            let (items', cm', player') = foldl updateObject (items, cm, player) collisions
+            let (items', cm', player') = updateObject (items, cm, player) $ head collisions
             in gs { gameStatePlayer = player', gameStateItemManager = items', collisionMap = cm' }
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
         hb = getPlayerPickupBox player
-        hb' = union oldHb hb
+        hb' = oldHb `union` hb
         cm = collisionMap gs
         items = gameStateItemManager gs
         updateObject (is, t, p) (ahb, a) =
-            let item = is ! a
-                items' = M.adjust (const item {itemPosition=Nothing}) a is
-                cm' = delete ahb t
+            let im = itemMap is
+                item = itemMap is ! a
+                items' = M.adjust (const item {itemPosition=Nothing}) a im
+                cm' = if sP then delete ahb t else t
                 pState = playerState p
                 player' = p { playerState = pState { playerItems = M.insertWith (+) (itemInfo item) 1 (playerItems pState) }}
-            in (items', cm', player')
+                is' = if sP then is { itemMap = items' } else is { itemHighlighted = Just a}
+            in (is', cm', if sP then player' else p)

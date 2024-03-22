@@ -14,7 +14,7 @@ import Configs
 import InputState ( Direction(DDown) )
 import GameState.Types
     ( Background(Background, backCollisions, backArea),
-      ItemManager,
+      ItemManager(..),
       ItemState(ItemState),
       Item(Item, itemHb, itemTexture),
       Player(Player),
@@ -84,10 +84,12 @@ initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs bars cm (Item mushroomEntry hb itemName) itemPos
+    return $ insertItems uniqs bars cm (Item mushroomEntry hightlightEntry hb itemName) itemPos
     where
         itemName = "mushroom"
+        highlightName = itemName `T.append` "_highlight"
         mushroomEntry = textures outs ! itemName
+        hightlightEntry = textures outs ! highlightName
         hb = itemHitBox $ items cfgs ! itemName
         bars = backCollisions back
         backT = backArea back
@@ -100,17 +102,17 @@ initItems cfgs outs back cm = do
         iH = textureHeight mushroomEntry
 
 insertItems :: [Unique] -> RTree Unique -> RTree Unique -> Item -> [(Int, Int)] -> (ItemManager, RTree Unique)
-insertItems uniqs bars cm item positions = foldr (uncurry (insertItem item bars)) (mempty, cm) $ zip uniqs positions
+insertItems uniqs bars cm item positions = foldr (uncurry (insertItem item bars)) (ItemManager mempty Nothing, cm) $ zip uniqs positions
 
 insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
 insertItem item bars un (x, y) (im, cm) =
     case getCollision hb' bars of
         [] -> case getCollision hb' cm of
             [] ->
-                let im' = M.insert un (ItemState item (Just (x, y))) im
+                let im' = M.insert un (ItemState item (Just (x, y))) (itemMap im)
                     t = itemTexture item
                     cm' = insert hb' un cm
-                in (im', cm')
+                in (im { itemMap=im' }, cm')
             _ -> (im, cm)
         _ -> (im, cm)
     where

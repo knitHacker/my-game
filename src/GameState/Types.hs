@@ -12,7 +12,7 @@ module GameState.Types
     , PlayerState(..)
     , PlayerConfig(..)
     , PlayerMovement(..)
-    , ItemManager
+    , ItemManager(..)
     , Item(..)
     , ItemState(..)
     , Background(..)
@@ -149,13 +149,14 @@ data Player = Player
 --  What the item is
 data Item = Item
     { itemTexture :: TextureEntry
+    , highlightTexture :: TextureEntry
     , itemHb :: BoundBox
     , itemType :: T.Text
     }
 
 instance Eq Item where
     (==) :: Item -> Item -> Bool
-    (==) i1 i2 = (itemType i1) == (itemType i2)
+    (==) i1 i2 = itemType i1 == itemType i2
 
 instance Ord Item where
     compare :: Item -> Item -> Ordering
@@ -174,7 +175,10 @@ data ItemState = ItemState
     }
 
 -- Correspond items with a unique id
-type ItemManager = M.Map Unique ItemState
+data ItemManager = ItemManager
+    { itemMap :: M.Map Unique ItemState
+    , itemHighlighted :: Maybe Unique
+    }
 
 -- Background state
 --  texture
