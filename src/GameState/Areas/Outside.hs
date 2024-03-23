@@ -45,14 +45,14 @@ import GameState.Collision.RTree ( getCollision, insert, RTree )
 
 import GameState.Item
 
-
 mainCharName :: T.Text
 mainCharName = "main_character"
-
 
 npcName :: T.Text
 npcName = "dog"
 
+mushrooms :: [T.Text]
+mushrooms = ["fly_agaric_mushroom", "mushroom"]
 
 instance Show Unique where
     show = show . hashUnique
@@ -85,17 +85,22 @@ initPlayer cfgs outs = Player playCfgs playState
 initItems :: GameConfigs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
 initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
-    itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
+    itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight mIW mIH
+    itemNamesIds <- replicateM numberOfItems $randomValue 0 (length mushrooms - 1)
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs bars cm (Item iN mushroomEntry hightlightEntry hb iT pickupOnCollision) itemPos
+    let itemChoices = fmap (\index -> itemOptions !! index) itemNamesIds
+    return $ insertItems (zipWith3 (,,) uniqs itemChoices itemPos) bars cm
     where
-        iT = "fly_agaric_mushroom"
-        highlightName = iT `T.append` "_highlight"
-        mushroomEntry = textures outs ! iT
-        hightlightEntry = textures outs ! highlightName
-        itemCfg = items cfgs ! iT
-        hb = itemHitBox itemCfg
-        iN = itemText itemCfg
+        itemOptions = fmap newItem mushrooms
+        newItem :: T.Text -> Item
+        newItem iT =
+            let highlightName = iT `T.append` "_highlight"
+                mushroomEntry = textures outs ! iT
+                hightlightEntry = textures outs ! highlightName
+                itemCfg = items cfgs ! iT
+                hb = itemHitBox itemCfg
+                iN = itemText itemCfg
+            in Item iN mushroomEntry hightlightEntry hb iT pickupOnCollision
         bars = backCollisions back
         backT = backArea back
         boardWidth = textureWidth backT
@@ -103,11 +108,11 @@ initItems cfgs outs back cm = do
         boardSize = boardWidth * boardHeight
         minItems = 25
         maxItems = 50
-        iW = textureWidth mushroomEntry
-        iH = textureHeight mushroomEntry
+        mIW = maximum $ fmap (textureWidth . itemTexture) itemOptions
+        mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
 
-insertItems :: [Unique] -> RTree Unique -> RTree Unique -> Item -> [(Int, Int)] -> (ItemManager, RTree Unique)
-insertItems uniqs bars cm item positions = foldr (uncurry (insertItem item bars)) (ItemManager mempty Nothing, cm) $ zip uniqs positions
+insertItems :: [(Unique, Item, (Int, Int))] -> RTree Unique -> RTree Unique -> (ItemManager, RTree Unique)
+insertItems info bars cm = foldr (\(u, i, pos) (im, rt) ->  insertItem i bars u pos (im, rt)) (ItemManager mempty Nothing, cm) info
 
 insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
 insertItem item bars un (x, y) (im, cm) =
