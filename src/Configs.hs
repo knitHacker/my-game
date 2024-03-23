@@ -79,7 +79,8 @@ instance ToJSON CharacterCfg
 
 
 data ItemCfg = ItemCfg
-    { itemHitBox :: BoundBox
+    { itemText :: T.Text
+    , itemHitBox :: BoundBox
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON ItemCfg

@@ -85,6 +85,16 @@
     },
     "items": {
         "mushroom": {
+            "itemText": "mushroom",
+            "itemHitBox": {
+                "x1": 0,
+                "y1": 5,
+                "x2": 6,
+                "y2": 6
+            }
+        },
+        "fly_agaric_mushroom": {
+            "itemText": "fly agaric",
             "itemHitBox": {
                 "x1": 0,
                 "y1": 5,
@@ -93,6 +103,7 @@
             }
         },
         "lavender": {
+            "itemText": "lavender",
             "itemHitBox": {
                 "x1": 0,
                 "y1": 15,
@@ -101,6 +112,7 @@
             }
         },
         "fern": {
+            "itemText": "fern",
             "itemHitBox": {
                 "x1": 0,
                 "y1": 15,

@@ -39,6 +39,16 @@
         "sizeY": 8,
         "file": "assets/images/mushroom_highlight.png"
     },
+    "fly_agaric_mushroom": {
+        "sizeX": 9,
+        "sizeY": 9,
+        "file": "assets/images/fly_agaric_mushroom.png"
+    },
+    "fly_agaric_mushroom_highlight": {
+        "sizeX": 11,
+        "sizeY": 11,
+        "file": "assets/images/fly_agaric_mushroom_highlight.png"
+    },
     "lavender": {
         "sizeX": 16,
         "sizeY": 16,

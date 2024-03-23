@@ -5,12 +5,13 @@ module GameState.Areas.Outside
 
 import Control.Monad ( replicateM )
 import Configs
-    ( AreaCfg(barriers),
-      BarrierCfg(mainHitBox),
-      CharacterCfg(charHitBox, charMovement),
-      GameConfigs(characters, items, areas, barrier_definitions),
-      ItemCfg(itemHitBox),
-      PositionCfg(x, y) )
+    ( AreaCfg(..)
+    , BarrierCfg(..)
+    , CharacterCfg(..)
+    , GameConfigs(..)
+    , ItemCfg(..)
+    , PositionCfg(..)
+    )
 import InputState ( Direction(DDown) )
 import GameState.Types
     ( Background(Background, backCollisions, backArea),
@@ -86,13 +87,15 @@ initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight iW iH
     uniqs <- replicateM numberOfItems newUnique
-    return $ insertItems uniqs bars cm (Item mushroomEntry hightlightEntry hb itemName pickupOnCollision) itemPos
+    return $ insertItems uniqs bars cm (Item iN mushroomEntry hightlightEntry hb iT pickupOnCollision) itemPos
     where
-        itemName = "mushroom"
-        highlightName = itemName `T.append` "_highlight"
-        mushroomEntry = textures outs ! itemName
+        iT = "fly_agaric_mushroom"
+        highlightName = iT `T.append` "_highlight"
+        mushroomEntry = textures outs ! iT
         hightlightEntry = textures outs ! highlightName
-        hb = itemHitBox $ items cfgs ! itemName
+        itemCfg = items cfgs ! iT
+        hb = itemHitBox itemCfg
+        iN = itemText itemCfg
         bars = backCollisions back
         backT = backArea back
         boardWidth = textureWidth backT

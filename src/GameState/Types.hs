@@ -149,7 +149,8 @@ data Player = Player
 --  The hitbox of the item
 --  What the item is
 data Item = Item
-    { itemTexture :: TextureEntry
+    { itemName :: T.Text
+    , itemTexture :: TextureEntry
     , highlightTexture :: TextureEntry
     , itemHb :: BoundBox
     , itemType :: T.Text

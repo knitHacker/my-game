@@ -16,34 +16,37 @@ import qualified Data.Text as T
 import Data.Unique ( Unique )
 
 import Configs
-    ( ConfigsRead(readConfigs), GameConfigs(boardSizeX, boardSizeY) )
+    ( ConfigsRead(..)
+    , GameConfigs(..)
+    )
 import GameState ()
 import GameState.Types
-    ( Background(backArea, backXOffset, backYOffset, backBarriers),
-      ItemState(ItemState),
-      Item(Item, itemTexture, itemType),
-      ItemManager(..),
-      Player(playerCfgs, playerState),
-      PlayerState(playerPosition, playerAction, playerItems),
-      PlayerConfig(playerTexture),
-      GameStateRead(..),
-      NPCManager(npcFollower),
-      GameArea(gameStateNPCs, gameStateItemManager, background,
-               gameStatePlayer),
-      MenuCursor(MenuCursor),
-      Menu(Menu),
-      PlayerMovement(PlayerMove),
-      PlayerAction(PlayerMoving, PlayerStanding),
-      MenuAction(..),
-      Inventory(bagTexture, areaInfo),
-      GameState(GameInventory, GameMenu, GameStateArea) )
+    ( Background(..)
+    , ItemState(..)
+    , Item(..)
+    , ItemManager(..)
+    , Player(..)
+    , PlayerState(..)
+    , PlayerConfig(..)
+    , GameStateRead(..)
+    , NPCManager(..)
+    , GameArea(..)
+    , MenuCursor(..)
+    , Menu(..)
+    , PlayerMovement(..)
+    , PlayerAction(..)
+    , MenuAction(..)
+    , Inventory(..)
+    , GameState(..)
+    )
 import OutputHandles.Types
-    ( Color(Red, Blue),
-      Draw(Draw),
-      Draws,
-      TextDisplay(TextDisplay),
-      TextureEntry(textureWidth, textureHeight, texture),
-      ToRender(ToRender) )
+    ( Color(..)
+    , Draw(..)
+    , Draws
+    , TextDisplay(..)
+    , TextureEntry(..)
+    , ToRender(..)
+    )
 import OutputHandles.Draw ( mkRect )
 import InputState ( Direction(..) )
 
@@ -129,7 +132,7 @@ drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWi
 
 drawItem :: Maybe Unique -> Int -> Int -> Int -> Int -> Draws -> (Unique, ItemState) -> Draws
 drawItem _ _ _ _ _ d (_, ItemState _ Nothing) = d
-drawItem hKey xStart yStart width height d (key, ItemState (Item tE tEh _ _ _) (Just (xPos, yPos)))
+drawItem hKey xStart yStart width height d (key, ItemState (Item _ tE tEh _ _ _) (Just (xPos, yPos)))
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
@@ -234,7 +237,7 @@ updateInventory cfgs inv = current <> ToRender draws' texts
         numText = [TextDisplay countStr (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) (fromIntegral (10 * (T.length countStr))) 20 Red
                   , TextDisplay itemStr (fromIntegral (itemX - 15)) (fromIntegral (itemY - 25)) (fromIntegral (10 * (T.length itemStr))) 20 Red]
         countStr = T.pack $ show count
-        itemStr = itemType item
+        itemStr = itemName item
         area = areaInfo inv
         current = updateAreaWindow cfgs area
         itemMap = playerItems $ playerState $ gameStatePlayer area
