@@ -1,14 +1,24 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module GameState.Player
-  ( playerStanding,
-    getDirection,
-    getBoundBox,
-    getPlayerHitbox,
-    getPlayerPickupBox,
-    newPosition,
-    movePlayer,
-    playerMove,
+  ( playerStanding
+  , getDirection
+  ,  getBoundBox
+  ,  getPlayerHitbox
+  ,  getPlayerPickupBox
+  ,  newPosition
+  ,  movePlayer
+  ,  playerMove
+  ,  mainCharName
+  , npcName
+  , initNPC
+  , initPlayer
   )
 where
+
+import qualified Data.Text as T
+import Data.Map ((!))
+import qualified Data.Map as M
 
 import Configs
     ( CharacterMovement(moveStep),
@@ -18,14 +28,39 @@ import GameState.Collision.BoundBox
     ( BoundBox(BB), union, translate )
 import GameState.Collision.RTree ( getIntersections )
 import GameState.Types
-    ( Background(backCollisions),
-      Player(Player, playerState),
-      PlayerState(playerAction, playerPosition),
-      PlayerConfig(playerMoveCfgs, playerHitBoxes, playerTexture),
-      PlayerMovement(PlayerMove),
-      PlayerAction(PlayerMoving, PlayerStanding) )
+
 import InputState ( Direction(..) )
 import OutputHandles.Types ( TextureEntry(textureWidth) )
+import Configs
+import OutputHandles.Types
+
+mainCharName :: T.Text
+mainCharName = "main_character"
+
+npcName :: T.Text
+npcName = "dog"
+
+initNPC :: GameConfigs -> OutputHandles -> Int -> Int -> NPCManager
+initNPC cfgs outs startX startY = NPCManager $ Player playCfgs playState
+    where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
+        charCfgs = characters cfgs ! npcName
+        textureEntry = textures outs ! npcName
+        hb = charHitBox charCfgs
+        cc = charMovement charCfgs
+
+
+initPlayer :: GameConfigs -> OutputHandles -> Int -> Int -> Player
+initPlayer cfgs outs startX startY = Player playCfgs playState
+    where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
+        charCfgs = characters cfgs ! mainCharName
+        textureEntry = textures outs ! mainCharName
+        hb = charHitBox charCfgs
+        cc = charMovement charCfgs
+
 
 playerStanding :: Player -> Bool
 playerStanding player =

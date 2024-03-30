@@ -22,7 +22,7 @@ module GameState.Types
 import Control.Monad ()
 import Control.Monad.IO.Class ()
 import qualified Data.Map.Strict as M
-import Data.Unique ( Unique )
+import Data.Unique ( Unique, hashUnique )
 import Data.Word ( Word32 )
 import qualified Data.Text as T
 import InputState
@@ -34,6 +34,11 @@ import GameState.Collision.RTree ( RTree )
 import GameState.Collision.BoundBox ( BoundBox )
 
 import Utils ()
+
+
+instance Show Unique where
+    show:: Unique -> String
+    show = show . hashUnique
 
 -- Top level game state
 --  Game menu is a menu with different options
