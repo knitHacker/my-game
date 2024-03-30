@@ -67,6 +67,10 @@
                     "y": 0
                 }
             }
+        },
+        "inside_house": {
+            "barriers": {
+            }
         }
     },
     "barrier_definitions": {

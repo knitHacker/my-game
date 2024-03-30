@@ -13,6 +13,7 @@ module GameState.Player
   , npcName
   , initNPC
   , initPlayer
+  , updatePlayerPosition
   )
 where
 
@@ -61,6 +62,10 @@ initPlayer cfgs outs startX startY = Player playCfgs playState
         hb = charHitBox charCfgs
         cc = charMovement charCfgs
 
+updatePlayerPosition :: Player -> Int -> Int -> Direction -> Player
+updatePlayerPosition p x y d = p {playerState = state {playerPosition = (x, y), playerAction = PlayerStanding d 0}}
+  where
+    state = playerState p
 
 playerStanding :: Player -> Bool
 playerStanding player =

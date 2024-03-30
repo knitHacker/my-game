@@ -28,7 +28,13 @@ import OutputHandles.Types
     ( OutputHandles(textures),
       TextureEntry(textureWidth, textureHeight) )
 import GameState.Collision ()
-import GameState.Player ( mainCharName, npcName, initNPC, initPlayer)
+import GameState.Player
+    ( mainCharName
+    , npcName
+    , initNPC
+    , initPlayer
+    , updatePlayerPosition
+    )
 
 import qualified Data.Text as T
 import qualified SDL
@@ -55,8 +61,8 @@ initItems cfgs outs back cm = do
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight mIW mIH
     itemNamesIds <- replicateM numberOfItems $randomValue 0 (length mushrooms - 1)
     uniqs <- replicateM numberOfItems newUnique
-    let itemChoices = fmap (\index -> itemOptions !! index) itemNamesIds
-    return $ insertItems (zipWith3 (,,) uniqs itemChoices itemPos) bars cm
+    let itemChoices = fmap (itemOptions !!) itemNamesIds
+    return $ insertItems (zip3 uniqs itemChoices itemPos) bars cm
     where
         itemOptions = fmap newItem mushrooms
         newItem :: T.Text -> Item
@@ -128,7 +134,8 @@ initOutsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initOutsideArea cfgs outs player = do
     back <- initBackground cfgs outs
     (im, cm) <- initItems cfgs outs back mempty
-    return $ GameArea back player (initNPC cfgs outs 20 10) im cm
+    let player' = updatePlayerPosition player 0 0 DDown
+    return $ GameArea back player' (initNPC cfgs outs 20 10) im cm
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do

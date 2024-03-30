@@ -34,10 +34,10 @@ import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class ( MonadIO(..) )
+import GameState.Player (initPlayer)
 
 initGameState :: GameConfigs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
---    area <- initOutsideArea cfgs outs
     return $ GameMenu (initMainMenu outs) True
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
@@ -75,9 +75,9 @@ decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos
 updateGameStateInMenu :: Menu -> GameConfigs -> InputState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs outs =
     if enterJustPressed inputs
-        then case (options m !! curPos) of
+        then case options m !! curPos of
             GameStart -> do
-                area <- initOutsideArea cfgs outs
+                area <- initOutsideArea cfgs outs player
                 return $ GameStateArea area True
             GameExit -> return GameExiting
             GameStartMenu -> return $ GameMenu (initMainMenu outs) True
@@ -88,6 +88,7 @@ updateGameStateInMenu m cfgs inputs outs =
             _ -> return (GameMenu m False)
     where
         curPos = cursorPos $ cursor m
+        player = initPlayer cfgs outs 0 0
 
 
 updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
