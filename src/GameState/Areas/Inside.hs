@@ -42,13 +42,19 @@ import Data.Unique ( Unique, hashUnique, newUnique )
 
 import GameState.Collision.BoundBox ( translate )
 import GameState.Collision.RTree ( getCollision, insert, RTree )
-import GameState.Player ( mainCharName, npcName, initNPC, initPlayer, updatePlayerPosition )
+import GameState.Player 
+    ( mainCharName
+    , npcName
+    , initNPC
+    , initPlayer
+    , updatePlayerPosition
+    )
 
 initBackground :: GameConfigs -> OutputHandles -> IO Background
 initBackground gCfgs outs = do
     uns <- replicateM (length areaCfg) newUnique
     let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaCfg)
-    return $ Background backT 0 0 barrs cm
+    return $ Background backT 0 0 barrs M.empty cm
     where
         name = "inside_house"
         areaCfg = M.toList $ barriers (areas gCfgs ! name)

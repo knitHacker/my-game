@@ -17,6 +17,7 @@ module GameState.Types
     , ItemState(..)
     , Background(..)
     , NPCManager(..)
+    , AreaLocation(..)
     ) where
 
 import Control.Monad ()
@@ -35,6 +36,8 @@ import GameState.Collision.BoundBox ( BoundBox )
 
 import Utils ()
 
+data AreaLocation = Inside | Outside
+    deriving (Eq, Ord, Show)
 
 instance Show Unique where
     show:: Unique -> String
@@ -198,5 +201,6 @@ data Background = Background
     , backXOffset :: Int
     , backYOffset :: Int
     , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
+    , backPortals :: M.Map AreaLocation BoundBox
     , backCollisions :: RTree Unique
     }

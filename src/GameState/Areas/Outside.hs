@@ -14,16 +14,18 @@ import Configs
     )
 import InputState ( Direction(DDown) )
 import GameState.Types
-    ( Background(Background, backCollisions, backArea),
-      ItemManager(..),
-      ItemState(ItemState),
-      Item(Item, itemHb, itemTexture),
-      Player(Player),
-      PlayerState(PlayerState),
-      PlayerConfig(PlayerCfg),
-      NPCManager(NPCManager),
-      GameArea(GameArea),
-      PlayerAction(PlayerStanding) )
+    ( Background(Background, backCollisions, backArea)
+    , ItemManager(..)
+    , ItemState(ItemState)
+    , Item(Item, itemHb, itemTexture)
+    , Player(Player)
+    , PlayerState(PlayerState)
+    , PlayerConfig(PlayerCfg)
+    , NPCManager(NPCManager)
+    , GameArea(GameArea)
+    , PlayerAction(PlayerStanding)
+    , AreaLocation(..)
+    )
 import OutputHandles.Types
     ( OutputHandles(textures),
       TextureEntry(textureWidth, textureHeight) )
@@ -47,7 +49,7 @@ import Data.Map.Strict ((!))
 import Control.Monad.IO.Class ( MonadIO )
 import Data.Unique ( Unique, hashUnique, newUnique )
 
-import GameState.Collision.BoundBox ( translate )
+import GameState.Collision.BoundBox ( bb, translate )
 import GameState.Collision.RTree ( getCollision, insert, RTree )
 
 import GameState.Item
@@ -108,12 +110,13 @@ initBackground :: GameConfigs -> OutputHandles -> IO Background
 initBackground gCfgs outs = do
     uns <- replicateM (length areaCfg) newUnique
     let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaCfg)
-    return $ Background backT 0 0 barrs cm
+    return $ Background backT 0 0 barrs M.empty cm
     where
         name = "outside"
         areaCfg = M.toList $ barriers (areas gCfgs ! name)
         backT = textures outs ! name
         barrCfgs = barrier_definitions gCfgs
+        portals = M.singleton Inside (bb 150 40 160 80)
 
 
 insertBarrier :: Unique -> T.Text -> PositionCfg -> M.Map T.Text BarrierCfg
