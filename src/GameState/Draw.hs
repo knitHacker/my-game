@@ -51,6 +51,7 @@ import OutputHandles.Draw ( mkRect )
 import InputState ( Direction(..) )
 
 import Debug.Trace ()
+import GHC.Real (fromIntegral)
 
 drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
@@ -226,6 +227,8 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
 updateInventory :: GameConfigs -> Inventory -> ToRender
 updateInventory cfgs inv = current <> ToRender draws' texts
     where
+        spaceBtw :: Int
+        spaceBtw = 60
         bagE = bagTexture inv
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
@@ -233,14 +236,18 @@ updateInventory cfgs inv = current <> ToRender draws' texts
         (draws', texts) = if M.size itemMap > 0
                     then (itemDraw, numText)
                     else (draws, [])
-        itemDraw = M.insert (2,1,1,1) (Draw (texture $ itemTexture $ item) (fromIntegral itemX) (fromIntegral itemY) 50 50 Nothing) draws
-        numText = [TextDisplay countStr (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) (fromIntegral (10 * (T.length countStr))) 20 Red
-                  , TextDisplay itemStr (fromIntegral (itemX - 15)) (fromIntegral (itemY - 25)) (fromIntegral (10 * (T.length itemStr))) 20 Red]
-        countStr = T.pack $ show count
-        itemStr = itemName item
+
+        itemDraw = foldl (\ds (i, item) -> M.insert (2,1,1,fromIntegral i) (Draw (texture $ itemTexture item) (fromIntegral (itemX + spaceBtw * i)) (fromIntegral itemY + 25) 25 25 Nothing) ds) draws $ zip [0..] items
+        numText = countText ++ nameText
+        countText = (\(i, str) ->
+                            TextDisplay str (fromIntegral (itemX + (spaceBtw * i) + 20)) (fromIntegral (itemY + 60)) (fromIntegral (5 * T.length str)) 10 Red) <$> zip [0..] countStrs
+        nameText = (\(i, str) ->
+                            TextDisplay str (fromIntegral (itemX + spaceBtw * i)) (fromIntegral (itemY - 5)) (fromIntegral (5 * T.length str)) 10 Red) <$> zip [0..] itemStrs
+        countStrs = fmap (T.pack . show) counts
+        itemStrs = map itemName items
         area = areaInfo inv
         current = updateAreaWindow cfgs area
         itemMap = playerItems $ playerState $ gameStatePlayer area
-        (item, count) = head $ M.assocs itemMap
-        itemX = boardWidth `div` 2 - 25
+        (items, counts) = unzip $ M.assocs itemMap
+        itemX = boardWidth `div` 2 - 50
         itemY = boardHeight `div` 2 - 25
