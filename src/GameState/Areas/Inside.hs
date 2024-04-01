@@ -82,4 +82,4 @@ initInsideArea cfgs outs player = do
     let im = ItemManager mempty Nothing
         cm = mempty
         player' = updatePlayerPosition player 0 0 DDown
-    return $ GameArea back player' (initNPC cfgs outs 20 10) im cm
+    return $ GameArea back player' (initNPC cfgs outs 20 10) im mempty cm

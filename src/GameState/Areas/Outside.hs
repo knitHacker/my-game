@@ -25,6 +25,7 @@ import GameState.Types
     , GameArea(GameArea)
     , PlayerAction(PlayerStanding)
     , AreaLocation(..)
+    , CollisionType(..)
     )
 import OutputHandles.Types
     ( OutputHandles(textures),
@@ -57,7 +58,7 @@ import GameState.Item
 mushrooms :: [T.Text]
 mushrooms = ["fly_agaric_mushroom", "mushroom"]
 
-initItems :: GameConfigs -> OutputHandles -> Background -> RTree Unique -> IO (ItemManager, RTree Unique)
+initItems :: GameConfigs -> OutputHandles -> Background -> RTree (CollisionType, Unique) -> IO (ItemManager, RTree (CollisionType, Unique))
 initItems cfgs outs back cm = do
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight mIW mIH
@@ -86,17 +87,17 @@ initItems cfgs outs back cm = do
         mIW = maximum $ fmap (textureWidth . itemTexture) itemOptions
         mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
 
-insertItems :: [(Unique, Item, (Int, Int))] -> RTree Unique -> RTree Unique -> (ItemManager, RTree Unique)
+insertItems :: [(Unique, Item, (Int, Int))] -> RTree Unique -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
 insertItems info bars cm = foldr (\(u, i, pos) (im, rt) ->  insertItem i bars u pos (im, rt)) (ItemManager mempty Nothing, cm) info
 
-insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree Unique) -> (ItemManager, RTree Unique)
+insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree (CollisionType, Unique)) -> (ItemManager, RTree (CollisionType, Unique))
 insertItem item bars un (x, y) (im, cm) =
     case getCollision hb' bars of
         [] -> case getCollision hb' cm of
             [] ->
                 let im' = M.insert un (ItemState item (Just (x, y))) (itemMap im)
                     t = itemTexture item
-                    cm' = insert hb' un cm
+                    cm' = insert hb' (ItemCollision, un) cm
                 in (im { itemMap=im' }, cm')
             _ -> (im, cm)
         _ -> (im, cm)
@@ -136,9 +137,11 @@ insertBarrier un name aCfg barrCfgs texts barrs rt = (barrs', rt')
 initOutsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initOutsideArea cfgs outs player = do
     back <- initBackground cfgs outs
-    (im, cm) <- initItems cfgs outs back mempty
+    let pm = error "george smells" --  M.singleton george george
+        cm = mempty
+    (im, cm') <- initItems cfgs outs back cm
     let player' = updatePlayerPosition player 0 0 DDown
-    return $ GameArea back player' (initNPC cfgs outs 20 10) im cm
+    return $ GameArea back player' (initNPC cfgs outs 20 10) im pm cm'
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do

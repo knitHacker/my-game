@@ -18,6 +18,7 @@ module GameState.Types
     , Background(..)
     , NPCManager(..)
     , AreaLocation(..)
+    , CollisionType(..)
     ) where
 
 import Control.Monad ()
@@ -102,6 +103,9 @@ data MenuCursor = MenuCursor
     , cursorTexture :: TextureEntry
     }
 
+data CollisionType = PortalCollision | ItemCollision
+    deriving (Show, Eq, Ord)
+
 -- Game area state
 --  background state including objects you can't walk into
 --  state of the player
@@ -113,7 +117,8 @@ data GameArea = GameArea
     , gameStatePlayer :: Player
     , gameStateNPCs :: NPCManager
     , gameStateItemManager :: ItemManager
-    , collisionMap :: RTree Unique -- TODO: move this into ItemManager probably
+    , gameStatePortals :: M.Map Unique AreaLocation
+    , collisionMap :: RTree (CollisionType, Unique) -- TODO: move this into ItemManager probably
     }
 
 -- NPC manager

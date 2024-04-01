@@ -50,6 +50,7 @@ import GameState.Types
     , PlayerAction(..)
     , GameState(..)
     , ItemManager(..)
+    , CollisionType(..)
     )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
@@ -97,7 +98,7 @@ updateArea' inputs area cfgs pM nM =
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl a p = collisionItemCheck a p inputs
+        areaColl a p = collisionActionCheck a p inputs
         backgroundNew area' = updateBackground cfgs (background area')
 
 
@@ -193,13 +194,13 @@ followTarget back player follow
         upDiff = folY - targetY'
         downDiff = targetY' - folY
         (_, leftMove) = playerMove back follow DLeft leftDiff
-        leftDiff' = folX - (fst leftMove)
+        leftDiff' = folX - fst leftMove
         (_, rightMove) = playerMove back follow DRight rightDiff
-        rightDiff' = (fst rightMove) - folX
+        rightDiff' = fst rightMove - folX
         (_, upMove) = playerMove back follow DUp upDiff
-        upDiff' = folY - (snd upMove)
+        upDiff' = folY - snd upMove
         (_, downMove) = playerMove back follow DDown downDiff
-        downDiff' = (snd downMove) - folY
+        downDiff' = snd downMove - folY
         (folX, folY) = playerPosition $ playerState follow
         (BB folXLeft folYUp folXRight folYDown) = getBoundBox dir $ playerHitBoxes $ playerCfgs follow
         dir = getDirection player
@@ -233,14 +234,16 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
             | otherwise = playerPos - div window 2
 
 
-collisionItemCheck :: GameArea -> Player -> InputState -> GameArea
-collisionItemCheck gs player inputs =
+collisionActionCheck :: GameArea -> Player -> InputState -> GameArea
+collisionActionCheck gs player inputs =
     case getCollisionBB hb' cm of
         [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
         collisions -> 
-            let fstColl@(_, itemId) = head collisions -- TODO: most overlapped one instead of first?
+            let (u, (ct, itemId)) = head collisions -- TODO: most overlapped one instead of first?
                 itemState = itemMap items ! itemId
-            in itemOnCollision (itemInfo itemState) gs inputs fstColl
+            in case ct of
+                ItemCollision -> itemOnCollision (itemInfo itemState) gs inputs (u, itemId)
+                PortalCollision -> error "Tried to go into broken portal"
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
