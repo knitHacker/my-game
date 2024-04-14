@@ -196,6 +196,11 @@ data ItemManager = ItemManager
     , itemHighlighted :: Maybe Unique
     }
 
+data Portal = Portal
+    { portalArea :: AreaLocation
+    , portalDoorOpen :: Bool
+    } deriving (Show, Eq)
+
 -- Background state
 --  texture
 --  offsets are the position of the window of the area shown
@@ -206,6 +211,6 @@ data Background = Background
     , backXOffset :: Int
     , backYOffset :: Int
     , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
-    , backPortals :: M.Map AreaLocation BoundBox
+    , backPortals :: M.Map Unique Portal
     , backCollisions :: RTree Unique
     }

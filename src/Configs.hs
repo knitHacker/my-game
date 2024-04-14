@@ -96,6 +96,7 @@ instance ToJSON PositionCfg
 
 data AreaCfg = AreaCfg
     { barriers :: M.Map T.Text PositionCfg
+    , portals :: M.Map T.Text BoundBox
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON AreaCfg

@@ -86,6 +86,7 @@ initItems cfgs outs back cm = do
         maxItems = 50
         mIW = maximum $ fmap (textureWidth . itemTexture) itemOptions
         mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
+        portals = undefined
 
 insertItems :: [(Unique, Item, (Int, Int))] -> RTree Unique -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
 insertItems info bars cm = foldr (\(u, i, pos) (im, rt) ->  insertItem i bars u pos (im, rt)) (ItemManager mempty Nothing, cm) info
@@ -109,16 +110,22 @@ insertItem item bars un (x, y) (im, cm) =
 -- bad literals in code
 initBackground :: GameConfigs -> OutputHandles -> IO Background
 initBackground gCfgs outs = do
-    uns <- replicateM (length areaCfg) newUnique
-    let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaCfg)
-    return $ Background backT 0 0 barrs M.empty cm
+    uns <- replicateM (length areaBarr) newUnique
+    let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaBarr)
+    return $ Background backT 0 0 barrs portalEntries cm
     where
         name = "outside"
-        areaCfg = M.toList $ barriers (areas gCfgs ! name)
+        areaCfg = areas gCfgs ! name
+        areaBarr = M.toList $ barriers areaCfg
         backT = textures outs ! name
         barrCfgs = barrier_definitions gCfgs
-        portals = M.singleton Inside (bb 150 40 160 80)
+        portalCfgs = M.toList $ portals areaCfg
+        portalEntries = foldl (\m (n, bb) -> M.insert (getAreaType n) bb m) M.empty portalCfgs
 
+getAreaType :: T.Text -> AreaLocation
+getAreaType "inside" = Inside
+getAreaType "outside" = Outside
+getAreaType _ = error "Area type not found"
 
 insertBarrier :: Unique -> T.Text -> PositionCfg -> M.Map T.Text BarrierCfg
               -> M.Map T.Text TextureEntry
