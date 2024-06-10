@@ -54,6 +54,7 @@ import GameState.Collision.BoundBox ( bb, translate )
 import GameState.Collision.RTree ( getCollision, insert, RTree )
 
 import GameState.Item
+import GameState.Barrier
 
 mushrooms :: [T.Text]
 mushrooms = ["fly_agaric_mushroom", "mushroom"]
@@ -88,10 +89,10 @@ initItems cfgs outs back cm = do
         mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
         portals = undefined
 
-insertItems :: [(Unique, Item, (Int, Int))] -> RTree Unique -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
+insertItems :: [(Unique, Item, (Int, Int))] -> RTree () -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
 insertItems info bars cm = foldr (\(u, i, pos) (im, rt) ->  insertItem i bars u pos (im, rt)) (ItemManager mempty Nothing, cm) info
 
-insertItem :: Item -> RTree Unique -> Unique -> (Int, Int) -> (ItemManager, RTree (CollisionType, Unique)) -> (ItemManager, RTree (CollisionType, Unique))
+insertItem :: Item -> RTree () -> Unique -> (Int, Int) -> (ItemManager, RTree (CollisionType, Unique)) -> (ItemManager, RTree (CollisionType, Unique))
 insertItem item bars un (x, y) (im, cm) =
     case getCollision hb' bars of
         [] -> case getCollision hb' cm of
@@ -110,9 +111,8 @@ insertItem item bars un (x, y) (im, cm) =
 -- bad literals in code
 initBackground :: GameConfigs -> OutputHandles -> IO Background
 initBackground gCfgs outs = do
-    uns <- replicateM (length areaBarr) newUnique
-    let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaBarr)
-    return $ Background backT 0 0 barrs portalEntries cm
+    let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarrier name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaBarr
+    return $ Background backT 0 0 barrs cm
     where
         name = "outside"
         areaCfg = areas gCfgs ! name
@@ -126,20 +126,6 @@ getAreaType :: T.Text -> AreaLocation
 getAreaType "inside" = Inside
 getAreaType "outside" = Outside
 getAreaType _ = error "Area type not found"
-
-insertBarrier :: Unique -> T.Text -> PositionCfg -> M.Map T.Text BarrierCfg
-              -> M.Map T.Text TextureEntry
-              -> M.Map Unique ((Int, Int), TextureEntry) -> RTree Unique
-              -> (M.Map Unique ((Int, Int), TextureEntry), RTree Unique)
-insertBarrier un name aCfg barrCfgs texts barrs rt = (barrs', rt')
-    where
-        xPos = x aCfg
-        yPos = y aCfg
-        text = texts ! name
-        barrs' = M.insert un ((xPos, yPos), text) barrs
-        bCfg = barrCfgs ! name
-        rt' = insert (translate xPos yPos (mainHitBox bCfg)) un rt
-
 
 initOutsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initOutsideArea cfgs outs player = do

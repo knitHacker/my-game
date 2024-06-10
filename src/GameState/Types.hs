@@ -117,7 +117,7 @@ data GameArea = GameArea
     , gameStatePlayer :: Player
     , gameStateNPCs :: NPCManager
     , gameStateItemManager :: ItemManager
-    , gameStatePortals :: M.Map Unique AreaLocation
+    , gameStatePortals :: M.Map Unique Portal
     , collisionMap :: RTree (CollisionType, Unique) -- TODO: move this into ItemManager probably
     }
 
@@ -199,7 +199,9 @@ data ItemManager = ItemManager
 data Portal = Portal
     { portalArea :: AreaLocation
     , portalDoorOpen :: Bool
-    } deriving (Show, Eq)
+    , portalClosedTexture :: TextureEntry
+    , portalOpenTexture :: TextureEntry
+    }
 
 -- Background state
 --  texture
@@ -210,7 +212,6 @@ data Background = Background
     { backArea :: TextureEntry
     , backXOffset :: Int
     , backYOffset :: Int
-    , backBarriers :: M.Map Unique ((Int, Int), TextureEntry)
-    , backPortals :: M.Map Unique Portal
-    , backCollisions :: RTree Unique
+    , backBarriers :: M.Map (Int, Int) TextureEntry
+    , backCollisions :: RTree ()
     }

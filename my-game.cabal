@@ -73,6 +73,7 @@ library
       GameState.Areas
       GameState.Areas.Inside
       GameState.Areas.Outside
+      GameState.Barrier
       GameState.Collision
       GameState.Collision.BoundBox
       GameState.Collision.RTree

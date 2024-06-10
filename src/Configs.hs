@@ -96,11 +96,19 @@ instance ToJSON PositionCfg
 
 data AreaCfg = AreaCfg
     { barriers :: M.Map T.Text PositionCfg
-    , portals :: M.Map T.Text BoundBox
+    , portals :: M.Map T.Text PortalCfg
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON AreaCfg
 instance ToJSON AreaCfg
+
+data PortalCfg = PortalCfg
+    { portalPosition :: PositionCfg
+    , portalHitBox :: BoundBox
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON PortalCfg
+instance ToJSON PortalCfg
 
 data BarrierCfg = BarrierCfg
     { mainHitBox :: BoundBox

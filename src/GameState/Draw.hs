@@ -151,16 +151,16 @@ drawItem hKey xStart yStart width height d (key, ItemState (Item _ tE tEh _ _ _)
 
 
 drawBarriers :: Draws -> GameConfigs -> GameArea -> Draws
-drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
+drawBarriers draws cfgs area = M.foldlWithKey (drawBarrier xOff yOff)
                                      draws
-                                     (M.elems (backBarriers (background area)))
+                                     (backBarriers (background area))
     where
         back = background area
         xOff = backXOffset back
         yOff = backYOffset back
 
-drawBarrier :: Int -> Int -> Draws -> ((Int, Int), TextureEntry) -> Draws
-drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
+drawBarrier :: Int -> Int -> Draws -> (Int, Int) -> TextureEntry -> Draws
+drawBarrier xStart yStart d (xPos, yPos) tE = M.insert (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         w = fromIntegral $ textureWidth tE

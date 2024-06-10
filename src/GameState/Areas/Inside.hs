@@ -42,39 +42,24 @@ import Data.Unique ( Unique, hashUnique, newUnique )
 
 import GameState.Collision.BoundBox ( translate )
 import GameState.Collision.RTree ( getCollision, insert, RTree )
-import GameState.Player 
+import GameState.Player
     ( mainCharName
     , npcName
     , initNPC
     , initPlayer
     , updatePlayerPosition
     )
+import GameState.Barrier
 
 initBackground :: GameConfigs -> OutputHandles -> IO Background
 initBackground gCfgs outs = do
-    uns <- replicateM (length areaCfg) newUnique
-    let (barrs, cm) = foldl (\(b, c) (un, (name, aCfg)) -> insertBarrier un name aCfg barrCfgs (textures outs) b c) (mempty, mempty) (zip uns areaCfg)
-    return $ Background backT 0 0 barrs M.empty cm
+    let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarrier name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
+    return $ Background backT 0 0 barrs cm
     where
         name = "inside_house"
         areaCfg = M.toList $ barriers (areas gCfgs ! name)
         backT = textures outs ! name
         barrCfgs = barrier_definitions gCfgs
-
-
-insertBarrier :: Unique -> T.Text -> PositionCfg -> M.Map T.Text BarrierCfg
-              -> M.Map T.Text TextureEntry
-              -> M.Map Unique ((Int, Int), TextureEntry) -> RTree Unique
-              -> (M.Map Unique ((Int, Int), TextureEntry), RTree Unique)
-insertBarrier un name aCfg barrCfgs texts barrs rt = (barrs', rt')
-    where
-        xPos = x aCfg
-        yPos = y aCfg
-        text = texts ! name
-        barrs' = M.insert un ((xPos, yPos), text) barrs
-        bCfg = barrCfgs ! name
-        rt' = insert (translate xPos yPos (mainHitBox bCfg)) un rt
-
 
 initInsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initInsideArea cfgs outs player = do
