@@ -26,6 +26,7 @@ import GameState.Types
     , PlayerAction(PlayerStanding)
     , AreaLocation(..)
     , CollisionType(..)
+    , Portal(..)
     )
 import OutputHandles.Types
     ( OutputHandles(textures),
@@ -127,11 +128,15 @@ getAreaType "inside" = Inside
 getAreaType "outside" = Outside
 getAreaType _ = error "Area type not found"
 
+initPortals :: GameConfigs -> OutputHandles -> IO (M.Map Unique Portal, RTree (CollisionType, Unique))
+initPortals cfgs outs = return (M.empty, mempty)
+
+addPortal :: Unique -> 
+
 initOutsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initOutsideArea cfgs outs player = do
     back <- initBackground cfgs outs
-    let pm = error "george smells" --  M.singleton george george
-        cm = mempty
+    (pm, cm) <- initPortals cfgs outs
     (im, cm') <- initItems cfgs outs back cm
     let player' = updatePlayerPosition player 0 0 DDown
     return $ GameArea back player' (initNPC cfgs outs 20 10) im pm cm'

@@ -12,6 +12,7 @@ module GameState.Types
     , PlayerState(..)
     , PlayerConfig(..)
     , PlayerMovement(..)
+    , Portal(..)
     , ItemManager(..)
     , Item(..)
     , ItemState(..)

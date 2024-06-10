@@ -21,7 +21,7 @@ import OutputHandles.Types
     ( OutputHandles
     , TextureEntry(..)
     )
-import GameState.Collision.BoundBox 
+import GameState.Collision.BoundBox
     ( union
     , BoundBox(BB)
     )
@@ -76,10 +76,10 @@ updateArea outs cfgs inputs area
 updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> GameState
 updateArea' inputs area cfgs pM nM =
     case (pM, nM) of
-        (Left p, Nothing) -> 
+        (Left p, Nothing) ->
             let a = areaColl area p
             in GameStateArea a True
-        (Left p, Just n') -> 
+        (Left p, Just n') ->
             let a = areaNPC n'
                 a' = areaColl a p
             in GameStateArea a' True
@@ -238,7 +238,7 @@ collisionActionCheck :: GameArea -> Player -> InputState -> GameArea
 collisionActionCheck gs player inputs =
     case getCollisionBB hb' cm of
         [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
-        collisions -> 
+        collisions ->
             let (u, (ct, itemId)) = head collisions -- TODO: most overlapped one instead of first?
                 itemState = itemMap items ! itemId
             in case ct of
