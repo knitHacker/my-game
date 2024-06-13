@@ -40,6 +40,7 @@ import GameState.Types
     , GameState(..)
     , Portal(..)
     )
+import GameState.Player
 import OutputHandles.Types
     ( Color(..)
     , Draw(..)
@@ -51,7 +52,7 @@ import OutputHandles.Types
 import OutputHandles.Draw ( mkRect )
 import InputState ( Direction(..) )
 
-import Debug.Trace ()
+import Debug.Trace
 import GHC.Real (fromIntegral)
 import GameState.Collision.BoundBox
 
@@ -69,8 +70,8 @@ drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boa
         mask = mkRect xStart yStart boardWidth boardHeight
 
 
-drawPlayer :: Draws -> GameArea -> Draws
-drawPlayer draws gs = M.insert (0, bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer :: Draws -> GameArea -> (Draws, [(Int, Int, Int, Int)])
+drawPlayer draws gs = (M.insert (0, bottom, 2, xPos') (Draw t xPos' yPos' pSizeX pSizeY (Just charRect)) draws, db)
     where
         player = gameStatePlayer gs
         textureEntry = playerTexture $ playerCfgs player
@@ -80,10 +81,13 @@ drawPlayer draws gs = M.insert (0, bottom, 2, xPos) (Draw t xPos yPos pSizeX pSi
         xOff = backXOffset $ background gs
         yOff = backYOffset $ background gs
         (xBoard, yBoard) = playerPosition $ playerState player
-        xPos = fromIntegral (xBoard - xOff)
-        yPos = fromIntegral (yBoard - yOff)
+        xPos = xBoard - xOff
+        yPos = yBoard - yOff
+        xPos' = fromIntegral xPos
+        yPos' = fromIntegral yPos
         charRect = getCharacter player
         bottom = fromIntegral (yBoard - yOff) + pSizeY
+        db = [toRect $ getPlayerPickupBoxAdjust player xPos yPos]
 
 drawNPC :: Draws -> GameArea -> Draws
 drawNPC draws gs = M.insert (0, bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
@@ -189,7 +193,7 @@ drawPortal xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral x
         xPos' = xPos - xStart
         yPos' = yPos - yStart
         bottom = fromIntegral yPos' + h
-        rect = toTuple $ translate xPos' yPos' $ portalHB port
+        rect = toRect $ translate xPos' yPos' $ portalHB port
 
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do
@@ -204,12 +208,12 @@ updateWindow = do
         _ -> return $ Just $ ToRender M.empty [] []
 
 updateAreaWindow :: GameConfigs -> GameArea -> ToRender
-updateAreaWindow cfgs area = ToRender draws5 [] dbs
+updateAreaWindow cfgs area = ToRender draws5 [] (dbs ++ dbs')
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
         (draws2, dbs) = drawPortals draws' cfgs area
-        draws3 = drawPlayer draws2 area
+        (draws3, dbs') = drawPlayer draws2 area
         draws4 = drawNPC draws3 area
         draws5 =  drawItems draws4 cfgs area
 
