@@ -14,7 +14,7 @@ import Configs
     )
 import InputState ( Direction(DDown) )
 import GameState.Types
-    ( Background(Background, backCollisions, backArea),
+    ( Background(..),
       ItemManager(..),
       ItemState(ItemState),
       Item(Item, itemHb, itemTexture),
@@ -51,10 +51,10 @@ import GameState.Player
     )
 import GameState.Barrier
 
-initBackground :: GameConfigs -> OutputHandles -> IO Background
+initBackground :: GameConfigs -> OutputHandles -> IO (Background, RTree ())
 initBackground gCfgs outs = do
-    let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarrier name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
-    return $ Background backT 0 0 barrs cm
+    let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarriers name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
+    return (Background backT 0 0 barrs, cm)
     where
         name = "inside_house"
         areaCfg = M.toList $ barriers (areas gCfgs ! name)
@@ -63,8 +63,8 @@ initBackground gCfgs outs = do
 
 initInsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initInsideArea cfgs outs player = do
-    back <- initBackground cfgs outs
+    (back, bcm) <- initBackground cfgs outs
     let im = ItemManager mempty Nothing
         cm = mempty
         player' = updatePlayerPosition player 0 0 DDown
-    return $ GameArea back player' (initNPC cfgs outs 20 10) im mempty cm
+    return $ GameArea back player' (initNPC cfgs outs 20 10) im mempty cm bcm

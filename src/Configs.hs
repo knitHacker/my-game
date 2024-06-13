@@ -14,6 +14,7 @@ module Configs
     , AreaCfg(..)
     , PositionCfg(..)
     , BarrierCfg(..)
+    , PortalCfg(..)
     ) where
 
 import Control.Monad ()

@@ -38,6 +38,7 @@ import GameState.Types
     , MenuAction(..)
     , Inventory(..)
     , GameState(..)
+    , Portal(..)
     )
 import OutputHandles.Types
     ( Color(..)
@@ -52,6 +53,7 @@ import InputState ( Direction(..) )
 
 import Debug.Trace ()
 import GHC.Real (fromIntegral)
+import GameState.Collision.BoundBox
 
 drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
@@ -98,8 +100,6 @@ drawNPC draws gs = M.insert (0, bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY
         yPos = fromIntegral (yBoard - yOff)
         charRect = getCharacter npcPlayer
         bottom = fromIntegral (yBoard - yOff) + pSizeY
-
-
 
 getCharacter :: Player -> SDL.Rectangle CInt
 getCharacter player = mkRect xPos yPos width height
@@ -169,6 +169,28 @@ drawBarrier xStart yStart d (xPos, yPos) tE = M.insert (0, bottom, 0, xPos') (Dr
         yPos' = fromIntegral (yPos - yStart)
         bottom = yPos' + h
 
+drawPortals :: Draws -> GameConfigs -> GameArea -> (Draws, [(Int, Int, Int, Int)])
+drawPortals draws cfgs area = M.foldl (drawPortal xOff yOff)
+                                     (draws, [])
+                                     (gameStatePortals area)
+    where
+        back = background area
+        xOff = backXOffset back
+        yOff = backYOffset back
+
+drawPortal :: Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> Portal -> (Draws, [(Int, Int, Int, Int)])
+drawPortal xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral xPos') (Draw t (fromIntegral xPos') (fromIntegral yPos') w h Nothing) d, rect : dbs)
+    where
+        tE = if portalDoorOpen port then portalOpenTexture port else portalClosedTexture port
+        t = texture tE
+        w = fromIntegral $ textureWidth tE
+        h = fromIntegral $ textureHeight tE
+        (xPos, yPos) = portalPos port
+        xPos' = xPos - xStart
+        yPos' = yPos - yStart
+        bottom = fromIntegral yPos' + h
+        rect = toTuple $ translate xPos' yPos' $ portalHB port
+
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do
     cfgs <- readConfigs
@@ -179,25 +201,23 @@ updateWindow = do
         GameStateArea area True -> return $ Just $ updateAreaWindow cfgs area
         GameStateArea _ False -> return Nothing
         GameInventory inv -> return $ Just $ updateInventory cfgs inv
-        _ -> return $ Just $ ToRender M.empty []
-
+        _ -> return $ Just $ ToRender M.empty [] []
 
 updateAreaWindow :: GameConfigs -> GameArea -> ToRender
-updateAreaWindow cfgs area = ToRender draws'''' []
+updateAreaWindow cfgs area = ToRender draws5 [] dbs
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
-        draws'' = drawPlayer draws' area
-        draws''' = drawNPC draws'' area
-        draws'''' =  drawItems draws''' cfgs area
-
+        (draws2, dbs) = drawPortals draws' cfgs area
+        draws3 = drawPlayer draws2 area
+        draws4 = drawNPC draws3 area
+        draws5 =  drawItems draws4 cfgs area
 
 updateGameMenu :: Menu -> ToRender
-updateGameMenu (Menu words opts cur) = ToRender M.empty words <> updateMenuOptions cur opts
-
+updateGameMenu (Menu words opts cur) = ToRender M.empty words [] <> updateMenuOptions cur opts
 
 updateMenuOptions :: MenuCursor -> [MenuAction] -> ToRender
-updateMenuOptions (MenuCursor pos tE) ma = ToRender draws $ updateMenuOptions' ma 180
+updateMenuOptions (MenuCursor pos tE) ma = ToRender draws (updateMenuOptions' ma 180) []
     where
         draws = M.singleton (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing)
         t = texture tE
@@ -225,7 +245,7 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
                         GameStartMenu -> ("Return to Main Menu", 100, 80)
 
 updateInventory :: GameConfigs -> Inventory -> ToRender
-updateInventory cfgs inv = current <> ToRender draws' texts
+updateInventory cfgs inv = current <> ToRender draws' texts []
     where
         spaceBtw :: Int
         spaceBtw = 60

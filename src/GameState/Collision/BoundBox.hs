@@ -15,6 +15,7 @@ module GameState.Collision.BoundBox
     , overlap
     , translate
     , distance
+    , toTuple
     ) where
 
 
@@ -80,6 +81,8 @@ bb x1 y1 x2 y2 = BB xS yS xE yE
         (xS, xE) = if x1 < x2 then (x1, x2) else (x2, x1)
         (yS, yE) = if y1 < y2 then (y1, y2) else (y2, y1)
 
+toTuple :: BoundBox -> (Int, Int, Int, Int)
+toTuple (BB x1 y1 x2 y2) = (x1, y1, x2, y2)
 
 isPointBB :: BoundBox -> Bool
 isPointBB (BB x1 y1 x2 y2) = (x1 == x2) && (y1 == y2)

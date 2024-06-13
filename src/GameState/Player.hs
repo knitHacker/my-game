@@ -22,17 +22,13 @@ import Data.Map ((!))
 import qualified Data.Map as M
 
 import Configs
-    ( CharacterMovement(moveStep),
-      CharacterHitBoxes(sideHitbox, frontHitbox, pickupX, pickupY) )
 import Data.Word (Word32)
 import GameState.Collision.BoundBox
     ( BoundBox(BB), union, translate )
-import GameState.Collision.RTree ( getIntersections )
+import GameState.Collision.RTree ( RTree, getIntersections )
 import GameState.Types
 
 import InputState ( Direction(..) )
-import OutputHandles.Types ( TextureEntry(textureWidth) )
-import Configs
 import OutputHandles.Types
 
 mainCharName :: T.Text
@@ -129,8 +125,8 @@ getBoundBox dir hbs =
     sideHb = sideHitbox hbs
     frontHb = frontHitbox hbs
 
-movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
-movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
+movePlayer :: RTree () -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
+movePlayer rtree player@(Player cfg state) dir ts f (newX, newY) =
   player {playerState = state {playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
   where
     newPos = foldl movePlayer' (newX, newY) collisions
@@ -138,7 +134,6 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
     hb = getBoundBox dir hitboxes
     hitboxes = playerHitBoxes cfg
     oldPlayerBB = translate oldX oldY hb
-    rtree = backCollisions back
     collisions = getIntersections movementBB rtree
     playerT = playerTexture cfg
     playerWidth = textureWidth playerT
@@ -151,8 +146,8 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
         DLeft -> (x + (x2 - x1), y)
         DRight -> (x - (x2 - x1), y)
 
-playerMove :: Background -> Player -> Direction -> Int -> (Direction, (Int, Int))
-playerMove back player@(Player cfg state) dir mvAmt = (dir, newPos)
+playerMove :: RTree () -> Player -> Direction -> Int -> (Direction, (Int, Int))
+playerMove rtree player@(Player cfg state) dir mvAmt = (dir, newPos)
   where
     (newX, newY) = newPosition player (Just mvAmt) dir
     -- end position after running into collisions
@@ -165,8 +160,6 @@ playerMove back player@(Player cfg state) dir mvAmt = (dir, newPos)
     hitboxes = playerHitBoxes cfg
     -- old position hit box
     oldPlayerBB = translate oldX oldY hb
-    -- rtree of collisions in the background
-    rtree = backCollisions back
     -- get overlaps of all collision objects and the movement
     collisions = getIntersections movementBB rtree
     playerT = playerTexture cfg

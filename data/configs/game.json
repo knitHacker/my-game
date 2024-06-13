@@ -64,16 +64,16 @@
                 }
             },
             "portals": {
-                "inside_house": {
+                "house": {
                     "portalPosition": {
                         "x": 180,
                         "y": 0
                     },
                     "portalHitBox": {
                         "x1": 150,
-                        "y1": 40,
+                        "y1": 80,
                         "x2": 160,
-                        "y2": 80
+                        "y2": 100
                     }
                 }
             }
