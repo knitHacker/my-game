@@ -38,6 +38,7 @@ import GameState.Player
     , movePlayer
     , playerMove
     )
+import GameState.Portal
 import GameState.Types
     ( Background(..)
     , Item(..)
@@ -246,7 +247,7 @@ collisionActionCheck gs player inputs =
                 itemState = itemMap items ! itemId
             in case ct of
                 ItemCollision -> itemOnCollision (itemInfo itemState) gs inputs (u, itemId)
-                PortalCollision -> error "Tried to go into broken portal"
+                PortalCollision -> portalOnCollision gs inputs itemId
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
@@ -254,3 +255,8 @@ collisionActionCheck gs player inputs =
         hb' = oldHb `union` hb
         cm = collisionMap gs
         items = gameStateItemManager gs
+
+resetItems :: GameArea -> GameArea
+resetItem area
+    | isJust $ itemHighlighted $ gameStateItemManager = 
+    | otherwiese = area

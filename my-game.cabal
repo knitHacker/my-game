@@ -84,6 +84,7 @@ library
       GameState.Menu.MainMenu
       GameState.Menu.PauseMenu
       GameState.Player
+      GameState.Portal
       GameState.Types
       InputState
       OutputHandles

@@ -1,6 +1,7 @@
 {
     "debug": true,
-    "debugOutlineTexture": true,
+    "debugOutlineTexture": false,
+    "debugHitboxes": true,
     "windowSizeX": 1200,
     "windowSizeY": 1000,
     "boardSizeX": 250,

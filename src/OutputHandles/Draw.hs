@@ -20,7 +20,6 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 
 import Configs
-    ( ConfigsRead(readConfigs), GameConfigs(debugOutlineTexture) )
 import OutputHandles.Types
     ( Color(..),
       Draw(..),
@@ -73,6 +72,7 @@ drawAll drawings = do
     cfgs <- readConfigs
     outs <- getOutputs
     let drawOutline = debugOutlineTexture cfgs
+        drawDbgs = debugHitboxes cfgs
         debugs = drawDebugs drawings
         r = renderer outs
         ratX = ratioX outs
@@ -84,7 +84,7 @@ drawAll drawings = do
     setColor r Red
     mapM_ (draw drawOutline r) drawings'
     setColor r Yellow
-    when drawOutline $ mapM_ (drawDebug r) debugs'
+    when drawDbgs $ mapM_ (drawDebug r) debugs'
     setColor r Black
     mapM_ (drawText r (font outs)) words'
     SDL.present r
