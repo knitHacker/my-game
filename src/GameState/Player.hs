@@ -140,7 +140,7 @@ getBoundBox dir hbs =
     sideHb = sideHitbox hbs
     frontHb = frontHitbox hbs
 
-movePlayer :: RTree () -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
+movePlayer :: Barriers -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
 movePlayer rtree player@(Player cfg state) dir ts f (newX, newY) =
   player {playerState = state {playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
   where
@@ -161,7 +161,7 @@ movePlayer rtree player@(Player cfg state) dir ts f (newX, newY) =
         DLeft -> (x + (x2 - x1), y)
         DRight -> (x - (x2 - x1), y)
 
-playerMove :: RTree () -> Player -> Direction -> Int -> (Direction, (Int, Int))
+playerMove :: Barriers -> Player -> Direction -> Int -> (Direction, (Int, Int))
 playerMove rtree player@(Player cfg state) dir mvAmt = (dir, newPos)
   where
     (newX, newY) = newPosition player (Just mvAmt) dir

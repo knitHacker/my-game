@@ -83,7 +83,8 @@ drawAll drawings = do
     SDL.clear r
     setColor r Red
     mapM_ (draw drawOutline r) drawings'
-    mapM_ (drawDebug r) debugs'
+    setColor r Yellow
+    when drawOutline $ mapM_ (drawDebug r) debugs'
     setColor r Black
     mapM_ (drawText r (font outs)) words'
     SDL.present r

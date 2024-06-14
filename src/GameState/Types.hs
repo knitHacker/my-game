@@ -21,6 +21,7 @@ module GameState.Types
     , AreaLocation(..)
     , CollisionType(..)
     , CollisionEntry
+    , Barriers
     ) where
 
 import Control.Monad ()
@@ -110,6 +111,8 @@ data CollisionType = PortalCollision | ItemCollision
 
 type CollisionEntry = (CollisionType, Unique)
 
+type Barriers = RTree ()
+
 -- Game area state
 --  background state including objects you can't walk into
 --  state of the player
@@ -123,7 +126,7 @@ data GameArea = GameArea
     , gameStateItemManager :: ItemManager
     , gameStatePortals :: M.Map Unique Portal
     , collisionMap :: RTree CollisionEntry
-    , barrierCollisions :: RTree ()
+    , barrierCollisions :: Barriers
     }
 
 -- NPC manager

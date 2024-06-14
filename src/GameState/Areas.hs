@@ -52,6 +52,7 @@ import GameState.Types
     , GameState(..)
     , ItemManager(..)
     , CollisionType(..)
+    , Barriers
     )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
@@ -104,7 +105,7 @@ updateArea' inputs area cfgs pM nM =
         backgroundNew area' = updateBackground cfgs (background area')
 
 
-updatePlayer :: RTree () -> Background -> InputState -> Player -> Maybe Player
+updatePlayer :: Barriers -> Background -> InputState -> Player -> Maybe Player
 updatePlayer rtree back inputs player@(Player cfgs state) =
     case (inputStateDirection inputs, playerAction state) of
         (Nothing, PlayerStanding _ _) -> Nothing
@@ -145,7 +146,7 @@ updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
 
-updateNPC :: Word32 -> RTree () -> Background -> Player -> NPCManager -> Maybe NPCManager
+updateNPC :: Word32 -> Barriers -> Background -> Player -> NPCManager -> Maybe NPCManager
 updateNPC ts rtree back player (NPCManager p) =
     case followPlayer ts rtree back player p of
         Nothing -> Nothing
@@ -153,7 +154,7 @@ updateNPC ts rtree back player (NPCManager p) =
 
 
 -- TODO: Add follow collision check (how not to get stuck)
-followPlayer :: Word32 -> RTree () -> Background -> Player -> Player -> Maybe Player
+followPlayer :: Word32 -> Barriers -> Background -> Player -> Player -> Maybe Player
 followPlayer ts rtree back player p@(Player cfgs state) =
     case (targetM, playerAction state) of
         (Nothing, PlayerMoving pm@(PlayerMove oldDir oldTs _))
@@ -176,7 +177,7 @@ followPlayer ts rtree back player p@(Player cfgs state) =
             in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
-followTarget :: RTree () -> Background -> Player -> Player -> Maybe (Direction, (Int, Int))
+followTarget :: Barriers -> Background -> Player -> Player -> Maybe (Direction, (Int, Int))
 followTarget rtree back player follow
     -- already in the target location but facing a different direction than the player so change facing direction
     | leftDiff' == 0 && upDiff' == 0 && dir /= nDir = Just (dir, (folX, folY))

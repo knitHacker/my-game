@@ -1,6 +1,6 @@
 {
     "debug": true,
-    "debugOutlineTexture": false,
+    "debugOutlineTexture": true,
     "windowSizeX": 1200,
     "windowSizeY": 1000,
     "boardSizeX": 250,
@@ -70,9 +70,9 @@
                         "y": 0
                     },
                     "portalHitBox": {
-                        "x1": 190,
+                        "x1": 80,
                         "y1": 80,
-                        "x2": 220,
+                        "x2": 110,
                         "y2": 100
                     }
                 }

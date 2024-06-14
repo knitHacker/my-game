@@ -14,19 +14,22 @@ import Configs
     )
 import InputState ( Direction(DDown) )
 import GameState.Types
-    ( Background(..),
-      ItemManager(..),
-      ItemState(ItemState),
-      Item(Item, itemHb, itemTexture),
-      Player(Player),
-      PlayerState(PlayerState),
-      PlayerConfig(PlayerCfg),
-      NPCManager(NPCManager),
-      GameArea(GameArea),
-      PlayerAction(PlayerStanding) )
+    ( Background(..)
+    , ItemManager(..)
+    , ItemState(ItemState)
+    , Item(Item, itemHb, itemTexture)
+    , Player(Player)
+    , PlayerState(PlayerState)
+    , PlayerConfig(PlayerCfg)
+    , NPCManager(NPCManager)
+    , GameArea(GameArea)
+    , PlayerAction(PlayerStanding)
+    , Barriers
+    )
 import OutputHandles.Types
-    ( OutputHandles(textures),
-      TextureEntry(textureWidth, textureHeight) )
+    ( OutputHandles(textures)
+    , TextureEntry(textureWidth, textureHeight)
+    )
 import GameState.Collision ()
 
 import qualified Data.Text as T
@@ -51,7 +54,7 @@ import GameState.Player
     )
 import GameState.Barrier
 
-initBackground :: GameConfigs -> OutputHandles -> IO (Background, RTree ())
+initBackground :: GameConfigs -> OutputHandles -> IO (Background, Barriers)
 initBackground gCfgs outs = do
     let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarriers name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
     return (Background backT 0 0 barrs, cm)
