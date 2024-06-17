@@ -5,6 +5,7 @@ module GameState.Areas
 import Data.Word (Word32)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
+import Data.Maybe
 
 import Configs
     ( CharacterMovement(..)
@@ -257,6 +258,6 @@ collisionActionCheck gs player inputs =
         items = gameStateItemManager gs
 
 resetItems :: GameArea -> GameArea
-resetItem area
-    | isJust $ itemHighlighted $ gameStateItemManager = 
-    | otherwiese = area
+resetItems area
+    | isJust $ itemHighlighted $ gameStateItemManager area = undefined
+    | otherwise = area

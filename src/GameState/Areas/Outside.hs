@@ -92,7 +92,6 @@ initItems cfgs outs back bars cm = do
         maxItems = 50
         mIW = maximum $ fmap (textureWidth . itemTexture) itemOptions
         mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
-        portals = undefined
 
 insertItems :: [(Unique, Item, (Int, Int))] -> Barriers -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
 -- why is this a foldr? if i remember come back and add a comment
@@ -137,7 +136,7 @@ initPortals :: GameConfigs -> OutputHandles -> Barriers -> IO (Barriers, M.Map U
 initPortals cfgs outs rt = do
     un <- newUnique
     let ps = addPortal (textures outs) (rt, M.empty, mempty) (un, Inside, (portalName, portalCfgs ! portalName))
-    print $ (\p -> portalHB p) <$> (\(_, pm, _) -> pm) ps
+    print $ (\p -> _portalHB p) <$> (\(_, pm, _) -> pm) ps
     return ps
     where
         portalName = "house"

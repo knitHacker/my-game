@@ -185,15 +185,15 @@ drawPortals draws cfgs area = M.foldl (drawPortal xOff yOff)
 drawPortal :: Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> Portal -> (Draws, [(Int, Int, Int, Int)])
 drawPortal xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral xPos') (Draw t (fromIntegral xPos') (fromIntegral yPos') w h Nothing) d, rect : dbs)
     where
-        tE = if portalDoorOpen port then portalOpenTexture port else portalClosedTexture port
+        tE = if _portalDoorOpen port then _portalOpenTexture port else _portalClosedTexture port
         t = texture tE
         w = fromIntegral $ textureWidth tE
         h = fromIntegral $ textureHeight tE
-        (xPos, yPos) = portalPos port
+        (xPos, yPos) = _portalPos port
         xPos' = xPos - xStart
         yPos' = yPos - yStart
         bottom = fromIntegral yPos' + h
-        rect = toRect $ translate xPos' yPos' $ portalHB port
+        rect = toRect $ translate xPos' yPos' $ _portalHB port
 
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do

@@ -1,4 +1,14 @@
 {-# LANGUAGE InstanceSigs #-}
+
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE InstanceSigs #-}
+
 module GameState.Types
     ( GameState(..)
     , Inventory(..)
@@ -24,6 +34,7 @@ module GameState.Types
     , Barriers
     ) where
 
+import Control.Lens
 import Control.Monad ()
 import Control.Monad.IO.Class ()
 import qualified Data.Map.Strict as M
@@ -205,13 +216,14 @@ data ItemManager = ItemManager
     }
 
 data Portal = Portal
-    { portalArea :: AreaLocation
-    , portalPos :: (Int, Int)
-    , portalHB :: BoundBox
-    , portalDoorOpen :: Bool
-    , portalClosedTexture :: TextureEntry
-    , portalOpenTexture :: TextureEntry
+    { _portalArea :: AreaLocation
+    , _portalPos :: (Int, Int)
+    , _portalHB :: BoundBox
+    , _portalDoorOpen :: Bool
+    , _portalClosedTexture :: TextureEntry
+    , _portalOpenTexture :: TextureEntry
     }
+
 
 -- Background state
 --  texture
@@ -224,3 +236,6 @@ data Background = Background
     , backYOffset :: Int
     , backBarriers :: M.Map (Int, Int) TextureEntry
     }
+
+
+makeLenses ''Portal

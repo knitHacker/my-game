@@ -17,9 +17,9 @@ portalOnCollision area inputs collId = area'
         pm = gameStatePortals area
         portalState = pm ! collId
         sP = spacePressed inputs
-        pm' = M.adjust (const portalState { portalDoorOpen = True }) collId pm
-        area' = if sP then newArea area (portalArea portalState) else area { gameStatePortals = pm' } 
+        pm' = M.adjust (const portalState { _portalDoorOpen = True }) collId pm
+        area' = if sP then newArea area (_portalArea portalState) else area { gameStatePortals = pm' } 
 
 
 newArea :: GameArea -> AreaLocation -> GameArea
-newArea area dest = trace "move to new area" area
+newArea area Inside = trace "move to new area" area
