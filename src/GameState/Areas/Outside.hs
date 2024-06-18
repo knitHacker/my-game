@@ -112,7 +112,6 @@ insertItem item bars un (x, y) (im, cm) =
         hb = itemHb item
         hb' = translate x y hb
 
-
 -- bad literals in code
 initBackground :: GameConfigs -> OutputHandles -> IO (Barriers, Background)
 initBackground gCfgs outs = do

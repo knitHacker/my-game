@@ -29,7 +29,7 @@ module GameState.Types
     , Background(..)
     , NPCManager(..)
     , AreaLocation(..)
-    , CollisionType(..)
+    , Items(..)
     , CollisionEntry
     , Barriers
     ) where
@@ -116,12 +116,6 @@ data MenuCursor = MenuCursor
     { cursorPos :: Int
     , cursorTexture :: TextureEntry
     }
-
-data CollisionType = PortalCollision | ItemCollision
-    deriving (Show, Eq, Ord)
-
-type CollisionEntry = (CollisionType, Unique)
-
 type Barriers = RTree ()
 
 -- Game area state
@@ -135,8 +129,6 @@ data GameArea = GameArea
     , gameStatePlayer :: Player
     , gameStateNPCs :: NPCManager
     , gameStateItemManager :: ItemManager
-    , gameStatePortals :: M.Map Unique Portal
-    , collisionMap :: RTree CollisionEntry
     , barrierCollisions :: Barriers
     }
 
@@ -186,7 +178,6 @@ data Item = Item
     , highlightTexture :: TextureEntry
     , itemHb :: BoundBox
     , itemType :: T.Text
-    , itemOnCollision :: GameArea -> InputState -> (BoundBox, Unique) -> GameArea
     }
 
 instance Eq Item where
@@ -209,21 +200,25 @@ data ItemState = ItemState
     , itemPosition :: Maybe (Int, Int)
     }
 
--- Correspond items with a unique id
-data ItemManager = ItemManager
-    { itemMap :: M.Map Unique ItemState
-    , itemHighlighted :: Maybe Unique
-    }
-
 data Portal = Portal
     { _portalArea :: AreaLocation
     , _portalPos :: (Int, Int)
-    , _portalHB :: BoundBox
-    , _portalDoorOpen :: Bool
+    , _portalHB :: BoundBox -- used for debugging
     , _portalClosedTexture :: TextureEntry
     , _portalOpenTexture :: TextureEntry
     }
 
+data Items = PortalItem Portal
+           | CollectItem ItemState
+
+type CollisionEntry = Unique
+
+-- Correspond items with a unique id
+data ItemManager = ItemManager
+    { itemMap :: M.Map Unique Items
+    , itemHighlighted :: Maybe CollisionEntry
+    , collisionMap :: RTree CollisionEntry
+    }
 
 -- Background state
 --  texture

@@ -39,7 +39,6 @@ import GameState.Player
     , movePlayer
     , playerMove
     )
-import GameState.Portal
 import GameState.Types
     ( Background(..)
     , Item(..)
