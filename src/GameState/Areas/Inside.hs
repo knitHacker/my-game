@@ -67,7 +67,6 @@ initBackground gCfgs outs = do
 initInsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initInsideArea cfgs outs player = do
     (back, bcm) <- initBackground cfgs outs
-    let im = ItemManager mempty Nothing
-        cm = mempty
+    let im = ItemManager mempty Nothing mempty
         player' = updatePlayerPosition player 0 0 DDown
     return $ GameArea back player' (initNPC cfgs outs 20 10) im bcm

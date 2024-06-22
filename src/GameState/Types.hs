@@ -22,7 +22,6 @@ module GameState.Types
     , PlayerState(..)
     , PlayerConfig(..)
     , PlayerMovement(..)
-    , Portal(..)
     , ItemManager(..)
     , Item(..)
     , ItemState(..)
@@ -30,8 +29,16 @@ module GameState.Types
     , NPCManager(..)
     , AreaLocation(..)
     , Items(..)
+    , ItemMap
+    , Portal(..)
     , CollisionEntry
     , Barriers
+    , portalArea
+    , portalPos
+    , portalHB
+    , portalClosedTexture
+    , portalOpenTexture
+    , portal
     ) where
 
 import Control.Lens
@@ -51,7 +58,7 @@ import GameState.Collision.BoundBox ( BoundBox )
 
 import Utils ()
 
-data AreaLocation = Inside | Outside
+data AreaLocation = InsideArea | OutsideArea
     deriving (Eq, Ord, Show)
 
 instance Show Unique where
@@ -208,14 +215,19 @@ data Portal = Portal
     , _portalOpenTexture :: TextureEntry
     }
 
+portal :: AreaLocation -> (Int, Int) -> BoundBox -> TextureEntry -> TextureEntry -> Portal
+portal = Portal
+
 data Items = PortalItem Portal
            | CollectItem ItemState
 
 type CollisionEntry = Unique
 
+type ItemMap = M.Map CollisionEntry Items
+
 -- Correspond items with a unique id
 data ItemManager = ItemManager
-    { itemMap :: M.Map Unique Items
+    { itemMap :: ItemMap
     , itemHighlighted :: Maybe CollisionEntry
     , collisionMap :: RTree CollisionEntry
     }

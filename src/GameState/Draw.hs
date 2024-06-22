@@ -24,6 +24,7 @@ import GameState.Types
     ( Background(..)
     , ItemState(..)
     , Item(..)
+    , Items(..)
     , ItemManager(..)
     , Player(..)
     , PlayerState(..)
@@ -125,8 +126,8 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: Draws -> GameConfigs -> GameArea -> Draws
-drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWidth boardHeight) draws (M.assocs (itemMap im))
+drawItems :: (Draws, [(Int, Int, Int, Int)]) -> GameConfigs -> GameArea -> (Draws, [(Int, Int, Int, Int)])
+drawItems (draws, dbs) cfgs gs = foldl (drawFromItemMap (itemHighlighted im) xOff yOff boardWidth boardHeight) (draws, dbs) (M.assocs (itemMap im))
     where
         im = gameStateItemManager gs
         back = background gs
@@ -135,15 +136,24 @@ drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWi
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
 
-drawItem :: Maybe Unique -> Int -> Int -> Int -> Int -> Draws -> (Unique, ItemState) -> Draws
-drawItem _ _ _ _ _ d (_, ItemState _ Nothing) = d
-drawItem hKey xStart yStart width height d (key, ItemState (Item _ tE tEh _ _ _) (Just (xPos, yPos)))
+drawFromItemMap :: Maybe Unique -> Int -> Int -> Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> (Unique, Items) -> (Draws, [(Int, Int, Int, Int)])
+drawFromItemMap hKey xStart yStart width height (d, dbs) (key, i) =
+    case i of
+        PortalItem p -> drawPortal isHighlighted xStart yStart (d, dbs) p
+        CollectItem (ItemState _ Nothing) -> (d, dbs)
+        CollectItem (ItemState iT (Just (xPos, yPos))) -> (drawItem isHighlighted xStart yStart width height d iT (xPos, yPos), dbs)
+
+    where
+        isHighlighted = case hKey of
+                            Nothing -> False
+                            Just k -> k == key
+
+drawItem :: Bool -> Int -> Int -> Int -> Int -> Draws -> Item -> (Int, Int) -> Draws
+drawItem hi xStart yStart width height d (Item _ tE tEh _ _) (xPos, yPos)
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
-        tE' = case hKey of
-                Just hk -> if hk == key then tEh else tE
-                Nothing -> tE
+        tE' = if hi then tEh else tE
         t = texture tE'
         tW = textureWidth tE'
         tH = textureHeight tE'
@@ -173,19 +183,10 @@ drawBarrier xStart yStart d (xPos, yPos) tE = M.insert (0, bottom, 0, xPos') (Dr
         yPos' = fromIntegral (yPos - yStart)
         bottom = yPos' + h
 
-drawPortals :: Draws -> GameConfigs -> GameArea -> (Draws, [(Int, Int, Int, Int)])
-drawPortals draws cfgs area = M.foldl (drawPortal xOff yOff)
-                                     (draws, [])
-                                     (gameStatePortals area)
+drawPortal :: Bool -> Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> Portal -> (Draws, [(Int, Int, Int, Int)])
+drawPortal hi xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral xPos') (Draw t (fromIntegral xPos') (fromIntegral yPos') w h Nothing) d, rect : dbs)
     where
-        back = background area
-        xOff = backXOffset back
-        yOff = backYOffset back
-
-drawPortal :: Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> Portal -> (Draws, [(Int, Int, Int, Int)])
-drawPortal xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral xPos') (Draw t (fromIntegral xPos') (fromIntegral yPos') w h Nothing) d, rect : dbs)
-    where
-        tE = if _portalDoorOpen port then _portalOpenTexture port else _portalClosedTexture port
+        tE = if hi then _portalOpenTexture port else _portalClosedTexture port
         t = texture tE
         w = fromIntegral $ textureWidth tE
         h = fromIntegral $ textureHeight tE
@@ -208,14 +209,13 @@ updateWindow = do
         _ -> return $ Just $ ToRender M.empty [] []
 
 updateAreaWindow :: GameConfigs -> GameArea -> ToRender
-updateAreaWindow cfgs area = ToRender draws5 [] (dbs ++ dbs')
+updateAreaWindow cfgs area = ToRender draws4 [] (dbs ++ dbs')
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
-        (draws2, dbs) = drawPortals draws' cfgs area
-        (draws3, dbs') = drawPlayer draws2 area
-        draws4 = drawNPC draws3 area
-        draws5 =  drawItems draws4 cfgs area
+        (draws2, dbs) = drawPlayer draws' area
+        draws3 = drawNPC draws2 area
+        (draws4, dbs') =  drawItems (draws3, dbs) cfgs area
 
 updateGameMenu :: Menu -> ToRender
 updateGameMenu (Menu words opts cur) = ToRender M.empty words [] <> updateMenuOptions cur opts

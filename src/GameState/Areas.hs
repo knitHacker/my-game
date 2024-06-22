@@ -52,11 +52,11 @@ import GameState.Types
     , PlayerAction(..)
     , GameState(..)
     , ItemManager(..)
-    , CollisionType(..)
     , Barriers
     )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
+import GameState.Item
 
 import Debug.Trace
 
@@ -243,18 +243,16 @@ collisionActionCheck gs player inputs =
     case getCollisionBB hb' cm of
         [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
         collisions ->
-            let (u, (ct, itemId)) = head collisions -- TODO: most overlapped one instead of first?
+            let (u, itemId) = head collisions -- TODO: most overlapped one instead of first?
                 itemState = itemMap items ! itemId
-            in case ct of
-                ItemCollision -> itemOnCollision (itemInfo itemState) gs inputs (u, itemId)
-                PortalCollision -> portalOnCollision gs inputs itemId
+            in onCollision gs inputs (u, itemId)
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
         hb = getPlayerPickupBox player
         hb' = oldHb `union` hb
-        cm = collisionMap gs
         items = gameStateItemManager gs
+        cm = collisionMap items
 
 resetItems :: GameArea -> GameArea
 resetItems area

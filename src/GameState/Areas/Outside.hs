@@ -26,10 +26,11 @@ import GameState.Types
     , GameArea(GameArea)
     , PlayerAction(PlayerStanding)
     , AreaLocation(..)
-    , CollisionType(..)
     , CollisionEntry
     , Portal(..)
     , Barriers
+    , ItemMap
+    , Items(..)
     )
 import OutputHandles.Types
     ( OutputHandles(textures)
@@ -65,15 +66,17 @@ import GameState.Barrier
 mushrooms :: [T.Text]
 mushrooms = ["fly_agaric_mushroom", "mushroom"]
 
-initItems :: GameConfigs -> OutputHandles -> Background -> Barriers -> RTree (CollisionType, Unique) -> IO (ItemManager, RTree (CollisionType, Unique))
-initItems cfgs outs back bars cm = do
+initItems :: GameConfigs -> OutputHandles -> Background -> Barriers -> IO (Barriers, ItemManager)
+initItems cfgs outs back bars = do
+    (bars', im') <- initPortals cfgs outs bars im
     numberOfItems <- randomValue minItems maxItems
     itemPos <- replicateM numberOfItems $ randomPosition boardWidth boardHeight mIW mIH
     itemNamesIds <- replicateM numberOfItems $randomValue 0 (length mushrooms - 1)
     uniqs <- replicateM numberOfItems newUnique
     let itemChoices = fmap (itemOptions !!) itemNamesIds
-    return $ insertItems (zip3 uniqs itemChoices itemPos) bars cm
+    return (bars', insertItems im' (zip3 uniqs itemChoices itemPos) bars')
     where
+        im = ItemManager M.empty Nothing mempty
         itemOptions = fmap newItem mushrooms
         newItem :: T.Text -> Item
         newItem iT =
@@ -83,7 +86,7 @@ initItems cfgs outs back bars cm = do
                 itemCfg = items cfgs ! iT
                 hb = itemHitBox itemCfg
                 iN = itemText itemCfg
-            in Item iN mushroomEntry hightlightEntry hb iT pickupOnCollision
+            in Item iN mushroomEntry hightlightEntry hb iT
         backT = backArea back
         boardWidth = textureWidth backT
         boardHeight = textureHeight backT
@@ -93,22 +96,22 @@ initItems cfgs outs back bars cm = do
         mIW = maximum $ fmap (textureWidth . itemTexture) itemOptions
         mIH = maximum $ fmap (textureHeight . itemTexture) itemOptions
 
-insertItems :: [(Unique, Item, (Int, Int))] -> Barriers -> RTree (CollisionType, Unique) -> (ItemManager, RTree (CollisionType, Unique))
--- why is this a foldr? if i remember come back and add a comment
-insertItems info bars cm = foldr (\(u, i, pos) (im, rt) ->  insertItem i bars u pos (im, rt)) (ItemManager mempty Nothing, cm) info
+insertItems :: ItemManager -> [(Unique, Item, (Int, Int))] -> Barriers -> ItemManager
+insertItems im info bars = foldr (\(u, i, pos) im ->  insertItem i bars u pos im) im info
 
-insertItem :: Item -> Barriers -> Unique -> (Int, Int) -> (ItemManager, RTree (CollisionType, Unique)) -> (ItemManager, RTree (CollisionType, Unique))
-insertItem item bars un (x, y) (im, cm) =
+insertItem :: Item -> Barriers -> Unique -> (Int, Int) -> ItemManager -> ItemManager
+insertItem item bars un (x, y) im =
     case getCollision hb' bars of
         [] -> case getCollision hb' cm of
             [] ->
-                let im' = M.insert un (ItemState item (Just (x, y))) (itemMap im)
+                let im' = M.insert un (CollectItem $ ItemState item (Just (x, y))) (itemMap im)
                     t = itemTexture item
-                    cm' = insert hb' (ItemCollision, un) cm
-                in (im { itemMap=im' }, cm')
-            _ -> (im, cm)
-        _ -> (im, cm)
+                    cm' = insert hb' un cm
+                in im { itemMap=im', collisionMap = cm' }
+            _ -> im { collisionMap = cm}
+        _ -> im { collisionMap = cm }
     where
+        cm = collisionMap im
         hb = itemHb item
         hb' = translate x y hb
 
@@ -127,41 +130,42 @@ initBackground gCfgs outs = do
         portalEntries = foldl (\m (n, bb) -> M.insert (getAreaType n) bb m) M.empty portalCfgs
 
 getAreaType :: T.Text -> AreaLocation
-getAreaType "inside" = Inside
-getAreaType "outside" = Outside
+getAreaType "inside" = InsideArea
+getAreaType "outside" = OutsideArea
 getAreaType _ = error "Area type not found"
 
-initPortals :: GameConfigs -> OutputHandles -> Barriers -> IO (Barriers, M.Map Unique Portal, RTree CollisionEntry)
-initPortals cfgs outs rt = do
+initPortals :: GameConfigs -> OutputHandles -> Barriers -> ItemManager -> IO (Barriers, ItemManager)
+initPortals cfgs outs rt im = do
     un <- newUnique
-    let ps = addPortal (textures outs) (rt, M.empty, mempty) (un, Inside, (portalName, portalCfgs ! portalName))
-    print $ (\p -> _portalHB p) <$> (\(_, pm, _) -> pm) ps
+    let ps = addPortal (textures outs) (rt, im) (un, InsideArea, (portalName, portalCfgs ! portalName))
     return ps
     where
         portalName = "house"
         areaCfg = areas cfgs ! "outside"
         portalCfgs = portals areaCfg
 
-addPortal :: TextureMap -> (Barriers, M.Map Unique Portal, RTree CollisionEntry) -> (Unique, AreaLocation, (T.Text, PortalCfg)) -> (Barriers, M.Map Unique Portal, RTree CollisionEntry)
-addPortal tm (barrs, pm, cm) (un, area, (n, pCfg)) = (barrs', pm', cm')
+addPortal :: TextureMap -> (Barriers, ItemManager) -> (Unique, AreaLocation, (T.Text, PortalCfg)) -> (Barriers, ItemManager)
+addPortal tm (barrs, im) (un, area, (n, pCfg)) = (barrs', im')
     where
+        pm = itemMap im
+        cm = collisionMap im
         loc = portalPosition pCfg
         barrs' = insertBarrier n (x loc, y loc) (bb 0 0 barW barH) barrs
         open = tm ! (n `T.append` "_open")
         close = tm ! (n `T.append` "_closed")
         barH = maximum $ fmap textureHeight [open, close]
         barW = maximum $ fmap textureWidth [open, close]
-        pm' = M.insert un (Portal area (x loc, y loc) hb False close open) pm
+        pm' = M.insert un (PortalItem $ Portal area (x loc, y loc) hb close open) pm
         hb = portalHitBox pCfg
-        cm' = insert (translate (x loc) (y loc) hb) (PortalCollision, un) cm
+        cm' = insert (translate (x loc) (y loc) hb) un cm
+        im' = im { itemMap = pm', collisionMap = cm' }
 
 initOutsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initOutsideArea cfgs outs player = do
     (bcm, back) <- initBackground cfgs outs
-    (bcm', pm, cm) <- initPortals cfgs outs bcm
-    (im, cm') <- initItems cfgs outs back bcm' cm
+    (bcm', im) <- initItems cfgs outs back bcm
     let player' = updatePlayerPosition player 0 0 DDown
-    return $ GameArea back player' (initNPC cfgs outs 20 10) im pm cm' bcm'
+    return $ GameArea back player' (initNPC cfgs outs 20 10) im bcm'
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
 randomPosition width height iW iH = do
