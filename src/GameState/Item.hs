@@ -12,10 +12,10 @@ import qualified Data.Map.Strict as M
 
 import Debug.Trace
 
-onCollision :: GameArea -> InputState -> (BoundBox, CollisionEntry) -> GameArea
+onCollision :: GameArea -> InputState -> (BoundBox, CollisionEntry) -> Either (AreaLocation, Player) GameArea
 onCollision area inputs (ahb, collId) =
     case items M.! collId of
-        CollectItem is -> pickupOnCollision area sP is (ahb, collId)
+        CollectItem is -> Right $ pickupOnCollision area sP is (ahb, collId)
         PortalItem p -> portalOnCollision area sP itemMan p collId
 
     where
@@ -38,15 +38,11 @@ pickupOnCollision area sP itemState (ahb, collId) = area'
         area' = if sP then area { gameStateItemManager = iM', gameStatePlayer = player' } else area { gameStateItemManager = iM' }
 
 
-portalOnCollision :: GameArea -> Bool -> ItemManager -> Portal -> CollisionEntry -> GameArea
-portalOnCollision area sP im port collId = area'
+portalOnCollision :: GameArea -> Bool -> ItemManager -> Portal -> CollisionEntry -> Either (AreaLocation, Player) GameArea
+portalOnCollision area sP im port collId = if sP then Left (_portalArea port, gameStatePlayer area) else Right area'
     where
         itemMan = gameStateItemManager area
         items = itemMap itemMan
         im' = im { itemHighlighted = Just collId }
-        area' = if sP then newArea area (_portalArea port) else area { gameStateItemManager = im' }
-
-
-newArea :: GameArea -> AreaLocation -> GameArea
-newArea area InsideArea = trace "move to new area" area
+        area' = area { gameStateItemManager = im' }
 

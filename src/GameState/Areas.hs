@@ -53,17 +53,19 @@ import GameState.Types
     , GameState(..)
     , ItemManager(..)
     , Barriers
+    , AreaLocation(..)
     )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
 import GameState.Item
+import GameState.Areas.Inside
 
 import Debug.Trace
 
-updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
+updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> Either (AreaLocation, Player) GameState
 updateArea outs cfgs inputs area
-    | escapeJustPressed inputs = GameMenu (initPauseMenu outs area) True
-    | iPressed inputs = GameInventory (initInventory outs area)
+    | escapeJustPressed inputs = Right $ GameMenu (initPauseMenu outs area) True
+    | iPressed inputs = Right $ GameInventory (initInventory outs area)
     | otherwise =
         case playerM of
             Nothing -> updateArea' inputs area cfgs (Left player) (npcNext player)
@@ -77,33 +79,36 @@ updateArea outs cfgs inputs area
         playerM = updatePlayer (barrierCollisions area) back inputs player
         npcNext p = updateNPC ts rt back p npc
 
-updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> GameState
+updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> Either (AreaLocation, Player) GameState
 updateArea' inputs area cfgs pM nM =
     case (pM, nM) of
         (Left p, Nothing) ->
-            let a = areaColl area p
-            in GameStateArea a True
+            let aE = areaColl area p
+            in convertE aE
         (Left p, Just n') ->
             let a = areaNPC n'
-                a' = areaColl a p
-            in GameStateArea a' True
+                aE = areaColl a p
+            in convertE aE
         (Right p', Nothing) ->
             let a = areaPlay p'
-                a' = areaColl a p'
-                b = backgroundNew a' p'
-            in GameStateArea (a' { background = b}) True
+                aE = areaColl a p'
+                aE' = backgroundNew aE p'
+            in convertE aE'
         (Right p', Just n') ->
             let a = areaBoth p' n'
-                a' = areaColl a p'
-                b = backgroundNew a' p'
-            in GameStateArea (a' { background = b }) True
+                aE = areaColl a p'
+                aE' = backgroundNew aE p'
+            in convertE aE'
     where
         sP = spacePressed inputs
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
         areaColl a p = collisionActionCheck a p inputs
-        backgroundNew area' = updateBackground cfgs (background area')
+        backgroundNew l@(Left _) _ = l
+        backgroundNew (Right a) p = Right $ (\b -> a { background = b}) $ updateBackground cfgs (background a) p
+        convertE (Left info) = Left info
+        convertE (Right a) = Right $ GameStateArea a True
 
 
 updatePlayer :: Barriers -> Background -> InputState -> Player -> Maybe Player
@@ -238,10 +243,10 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
             | otherwise = playerPos - div window 2
 
 
-collisionActionCheck :: GameArea -> Player -> InputState -> GameArea
+collisionActionCheck :: GameArea -> Player -> InputState -> Either (AreaLocation, Player) GameArea
 collisionActionCheck gs player inputs =
     case getCollisionBB hb' cm of
-        [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
+        [] -> Right $ gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
         collisions ->
             let (u, itemId) = head collisions -- TODO: most overlapped one instead of first?
                 itemState = itemMap items ! itemId

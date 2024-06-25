@@ -8,19 +8,23 @@ module GameState
 import Control.Monad ()
 import Configs ( ConfigsRead(readConfigs), GameConfigs )
 import InputState
-    ( enterJustPressed,
-      Direction(DDown, DUp),
-      InputRead(..),
-      InputState(inputRepeat, inputStateDirection) )
+    ( enterJustPressed
+    , Direction(DDown, DUp)
+    ,InputRead(..)
+    , InputState(inputRepeat, inputStateDirection)
+    )
 import GameState.Types
-    ( GameStateRead(..),
-      GameArea,
-      MenuCursor(MenuCursor, cursorPos),
-      Menu(Menu, cursor, options),
-      MenuAction(GameContinue, GameStart, GameExit, GameStartMenu),
-      GameState(..) )
+    ( GameStateRead(..)
+    , GameArea
+    , MenuCursor(MenuCursor, cursorPos)
+    , Menu(Menu, cursor, options)
+    , MenuAction(GameContinue, GameStart, GameExit, GameStartMenu)
+    , GameState(..)
+    , AreaLocation(..)
+    )
 import GameState.Areas ( updateArea )
 import GameState.Areas.Outside ( initOutsideArea )
+import GameState.Areas.Inside ( initInsideArea )
 import GameState.Menu.MainMenu ( initMainMenu )
 import GameState.Inventory ( updateGameInventory )
 import OutputHandles.Types ( OutputHandles, OutputRead(..) )
@@ -58,7 +62,7 @@ updateGameState = do
     outs <- getOutputs
     case gs of
         GameMenu m _ -> liftIO $ updateGameStateInMenu m cfgs inputs outs
-        GameStateArea area _ -> return $ updateGameStateInArea outs cfgs inputs area
+        GameStateArea area _ -> liftIO $ updateGameStateInArea outs cfgs inputs area
         GameInventory inv -> return $ updateGameInventory inputs inv
         _ -> return gs
 
@@ -91,5 +95,8 @@ updateGameStateInMenu m cfgs inputs outs =
         player = initPlayer cfgs outs 0 0
 
 
-updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
-updateGameStateInArea = updateArea
+updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> IO GameState
+updateGameStateInArea outs cfgs inputs area =
+    case updateArea outs cfgs inputs area of
+        Right gs -> return gs
+        Left (InsideArea, p) -> initInsideArea cfgs outs p >>= \a -> return $ GameStateArea a True
