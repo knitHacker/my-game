@@ -1,31 +1,68 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module GameState.Player
-  ( playerStanding,
-    getDirection,
-    getBoundBox,
-    getPlayerHitbox,
-    getPlayerPickupBox,
-    newPosition,
-    movePlayer,
-    playerMove,
+  ( playerStanding
+  , getDirection
+  ,  getBoundBox
+  ,  getPlayerHitbox
+  ,  getPlayerPickupBox
+  ,  getPlayerPickupBoxAdjust
+  ,  newPosition
+  ,  movePlayer
+  ,  playerMove
+  ,  mainCharName
+  , npcName
+  , initNPC
+  , initPlayer
+  , updatePlayerPosition
   )
 where
 
+import qualified Data.Text as T
+import Data.Map ((!))
+import qualified Data.Map as M
+
 import Configs
-    ( CharacterMovement(moveStep),
-      CharacterHitBoxes(sideHitbox, frontHitbox, pickupX, pickupY) )
 import Data.Word (Word32)
 import GameState.Collision.BoundBox
     ( BoundBox(BB), union, translate )
-import GameState.Collision.RTree ( getIntersections )
+import GameState.Collision.RTree ( RTree, getIntersections )
 import GameState.Types
-    ( Background(backCollisions),
-      Player(Player, playerState),
-      PlayerState(playerAction, playerPosition),
-      PlayerConfig(playerMoveCfgs, playerHitBoxes, playerTexture),
-      PlayerMovement(PlayerMove),
-      PlayerAction(PlayerMoving, PlayerStanding) )
+
 import InputState ( Direction(..) )
-import OutputHandles.Types ( TextureEntry(textureWidth) )
+import OutputHandles.Types
+
+mainCharName :: T.Text
+mainCharName = "main_character"
+
+npcName :: T.Text
+npcName = "dog"
+
+initNPC :: GameConfigs -> OutputHandles -> Int -> Int -> NPCManager
+initNPC cfgs outs startX startY = NPCManager $ Player playCfgs playState
+    where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
+        charCfgs = characters cfgs ! npcName
+        textureEntry = textures outs ! npcName
+        hb = charHitBox charCfgs
+        cc = charMovement charCfgs
+
+
+initPlayer :: GameConfigs -> OutputHandles -> Int -> Int -> Player
+initPlayer cfgs outs startX startY = Player playCfgs playState
+    where
+        playCfgs = PlayerCfg textureEntry hb cc
+        playState = PlayerState (startX, startY) (PlayerStanding DDown 0) mempty
+        charCfgs = characters cfgs ! mainCharName
+        textureEntry = textures outs ! mainCharName
+        hb = charHitBox charCfgs
+        cc = charMovement charCfgs
+
+updatePlayerPosition :: Player -> Int -> Int -> Direction -> Player
+updatePlayerPosition p x y d = p {playerState = state {playerPosition = (x, y), playerAction = PlayerStanding d 0}}
+  where
+    state = playerState p
 
 playerStanding :: Player -> Bool
 playerStanding player =
@@ -78,6 +115,20 @@ getPlayerPickupBox p@(Player cfg state) = translate x y hb
       DRight -> BB hx1 hy1 (hx2 + pickX) hy2
     (x, y) = playerPosition state
 
+getPlayerPickupBoxAdjust :: Player -> Int -> Int -> BoundBox
+getPlayerPickupBoxAdjust p@(Player cfg state) x y = translate x y hb
+  where
+    dir = getDirection p
+    pHB = playerHitBoxes cfg
+    BB hx1 hy1 hx2 hy2 = getBoundBox dir pHB
+    pickX = pickupX pHB
+    pickY = pickupY pHB
+    hb = case dir of
+      DUp -> BB hx1 (hy1 - pickY) hx2 hy2
+      DDown -> BB hx1 hy1 hx2 (hy2 + pickY)
+      DLeft -> BB (hx1 - pickX) hy1 hx2 hy2
+      DRight -> BB hx1 hy1 (hx2 + pickX) hy2
+
 getBoundBox :: Direction -> CharacterHitBoxes -> BoundBox
 getBoundBox dir hbs =
   case dir of
@@ -89,8 +140,8 @@ getBoundBox dir hbs =
     sideHb = sideHitbox hbs
     frontHb = frontHitbox hbs
 
-movePlayer :: Background -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
-movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
+movePlayer :: Barriers -> Player -> Direction -> Word32 -> Int -> (Int, Int) -> Player
+movePlayer rtree player@(Player cfg state) dir ts f (newX, newY) =
   player {playerState = state {playerAction = PlayerMoving (PlayerMove dir ts f), playerPosition = newPos}}
   where
     newPos = foldl movePlayer' (newX, newY) collisions
@@ -98,7 +149,6 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
     hb = getBoundBox dir hitboxes
     hitboxes = playerHitBoxes cfg
     oldPlayerBB = translate oldX oldY hb
-    rtree = backCollisions back
     collisions = getIntersections movementBB rtree
     playerT = playerTexture cfg
     playerWidth = textureWidth playerT
@@ -111,8 +161,8 @@ movePlayer back player@(Player cfg state) dir ts f (newX, newY) =
         DLeft -> (x + (x2 - x1), y)
         DRight -> (x - (x2 - x1), y)
 
-playerMove :: Background -> Player -> Direction -> Int -> (Direction, (Int, Int))
-playerMove back player@(Player cfg state) dir mvAmt = (dir, newPos)
+playerMove :: Barriers -> Player -> Direction -> Int -> (Direction, (Int, Int))
+playerMove rtree player@(Player cfg state) dir mvAmt = (dir, newPos)
   where
     (newX, newY) = newPosition player (Just mvAmt) dir
     -- end position after running into collisions
@@ -125,8 +175,6 @@ playerMove back player@(Player cfg state) dir mvAmt = (dir, newPos)
     hitboxes = playerHitBoxes cfg
     -- old position hit box
     oldPlayerBB = translate oldX oldY hb
-    -- rtree of collisions in the background
-    rtree = backCollisions back
     -- get overlaps of all collision objects and the movement
     collisions = getIntersections movementBB rtree
     playerT = playerTexture cfg

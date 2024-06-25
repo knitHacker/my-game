@@ -6,11 +6,15 @@ module GameState.Menu.MainMenu
 import qualified Data.Map.Strict as M
 
 import OutputHandles.Types
-    ( Color(White), OutputHandles(textures), TextDisplay(TextDisplay) )
+    ( Color(White)
+    , OutputHandles(textures)
+    , TextDisplay(TextDisplay)
+    )
 import GameState.Types
-    ( MenuCursor(MenuCursor),
-      Menu(Menu),
-      MenuAction(GameExit, GameStart) )
+    ( MenuCursor(MenuCursor)
+    , Menu(Menu)
+    , MenuAction(GameExit, GameStart)
+    )
 
 initMainMenu :: OutputHandles -> Menu
 initMainMenu outs = Menu words opts (MenuCursor 0 arrowEntry)

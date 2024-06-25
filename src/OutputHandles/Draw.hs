@@ -20,14 +20,13 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 import qualified Data.Map.Strict as M
 
 import Configs
-    ( ConfigsRead(readConfigs), GameConfigs(debugOutlineTexture) )
 import OutputHandles.Types
     ( Color(..),
       Draw(..),
       OutputHandles(renderer, ratioX, ratioY, font),
       OutputRead(..),
       TextDisplay(..),
-      ToRender(draws, drawWords) )
+      ToRender(draws, drawWords, drawDebugs) )
 
 
 
@@ -73,17 +72,26 @@ drawAll drawings = do
     cfgs <- readConfigs
     outs <- getOutputs
     let drawOutline = debugOutlineTexture cfgs
+        drawDbgs = debugHitboxes cfgs
+        debugs = drawDebugs drawings
         r = renderer outs
         ratX = ratioX outs
         ratY = ratioY outs
         drawings' = scaleDraw ratX ratY <$> draws drawings
         words' = scaleWords ratX ratY <$> drawWords drawings
+        debugs' = scaleDebugs ratX ratY <$> debugs
     SDL.clear r
     setColor r Red
     mapM_ (draw drawOutline r) drawings'
+    setColor r Yellow
+    when drawDbgs $ mapM_ (drawDebug r) debugs'
     setColor r Black
     mapM_ (drawText r (font outs)) words'
     SDL.present r
+
+drawDebug :: MonadIO m => SDL.Renderer -> (Int, Int, Int, Int) -> m ()
+drawDebug r (x, y, w, h) = do
+    SDL.drawRect r (Just (mkRect (fromIntegral x) (fromIntegral y) (fromIntegral w) (fromIntegral h)))
 
 drawText :: MonadIO m => SDL.Renderer -> Font.Font -> TextDisplay -> m ()
 drawText r font wd = do
@@ -99,18 +107,16 @@ draw showRect r d = do
     where
         pos = mkRect (drawPosX d) (drawPosY d) (drawWidth d) (drawHeight d)
 
+scale :: (Integral a, RealFrac b) => a -> b -> a
+scale 0 _ = 0
+scale _ 0 = 0
+scale o r = floor (fromIntegral o * r)
 
 scaleDraw :: Double -> Double -> Draw -> Draw
 scaleDraw rX rY (Draw t pX pY w h m) = Draw t (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) m
-    where
-        scale 0 _ = 0
-        scale _ 0 = 0
-        scale o r = floor ((fromIntegral o) * r)
-
 
 scaleWords :: Double -> Double -> TextDisplay -> TextDisplay
 scaleWords rX rY (TextDisplay wd pX pY w h c) = TextDisplay wd (scale pX rX) (scale pY rY) (scale w rX) (scale h rY) c
-    where
-        scale 0 _ = 0
-        scale _ 0 = 0
-        scale o r = floor ((fromIntegral o) * r)
+
+scaleDebugs :: Double -> Double -> (Int, Int, Int, Int) -> (Int, Int, Int, Int)
+scaleDebugs rX rY (x, y, w, h) = (scale x rX, scale y rY, scale w rX, scale h rY)

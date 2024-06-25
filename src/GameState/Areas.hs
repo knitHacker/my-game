@@ -5,6 +5,7 @@ module GameState.Areas
 import Data.Word (Word32)
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
+import Data.Maybe
 
 import Configs
     ( CharacterMovement(..)
@@ -21,13 +22,14 @@ import OutputHandles.Types
     ( OutputHandles
     , TextureEntry(..)
     )
-import GameState.Collision.BoundBox 
+import GameState.Collision.BoundBox
     ( union
     , BoundBox(BB)
     )
 import GameState.Collision.RTree
     ( delete
     , getCollisionBB
+    , RTree
     )
 import GameState.Player
     ( getBoundBox
@@ -50,16 +52,20 @@ import GameState.Types
     , PlayerAction(..)
     , GameState(..)
     , ItemManager(..)
+    , Barriers
+    , AreaLocation(..)
     )
 import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
+import GameState.Item
+import GameState.Areas.Inside
 
 import Debug.Trace
 
-updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
+updateArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> Either (AreaLocation, Player) GameState
 updateArea outs cfgs inputs area
-    | escapeJustPressed inputs = GameMenu (initPauseMenu outs area) True
-    | iPressed inputs = GameInventory (initInventory outs area)
+    | escapeJustPressed inputs = Right $ GameMenu (initPauseMenu outs area) True
+    | iPressed inputs = Right $ GameInventory (initInventory outs area)
     | otherwise =
         case playerM of
             Nothing -> updateArea' inputs area cfgs (Left player) (npcNext player)
@@ -68,49 +74,53 @@ updateArea outs cfgs inputs area
         player = gameStatePlayer area
         npc = gameStateNPCs area
         back = background area
+        rt = barrierCollisions area
         ts = inputTimestamp inputs
-        playerM = updatePlayer back inputs player
-        npcNext p = updateNPC ts back p npc
+        playerM = updatePlayer (barrierCollisions area) back inputs player
+        npcNext p = updateNPC ts rt back p npc
 
-updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> GameState
+updateArea' :: InputState -> GameArea -> GameConfigs -> Either Player Player -> Maybe NPCManager -> Either (AreaLocation, Player) GameState
 updateArea' inputs area cfgs pM nM =
     case (pM, nM) of
-        (Left p, Nothing) -> 
-            let a = areaColl area p
-            in GameStateArea a True
-        (Left p, Just n') -> 
+        (Left p, Nothing) ->
+            let aE = areaColl area p
+            in convertE aE
+        (Left p, Just n') ->
             let a = areaNPC n'
-                a' = areaColl a p
-            in GameStateArea a' True
+                aE = areaColl a p
+            in convertE aE
         (Right p', Nothing) ->
             let a = areaPlay p'
-                a' = areaColl a p'
-                b = backgroundNew a' p'
-            in GameStateArea (a' { background = b}) True
+                aE = areaColl a p'
+                aE' = backgroundNew aE p'
+            in convertE aE'
         (Right p', Just n') ->
             let a = areaBoth p' n'
-                a' = areaColl a p'
-                b = backgroundNew a' p'
-            in GameStateArea (a' { background = b }) True
+                aE = areaColl a p'
+                aE' = backgroundNew aE p'
+            in convertE aE'
     where
         sP = spacePressed inputs
         areaNPC npc' = (area { gameStateNPCs = npc' })
         areaPlay player' = (area { gameStatePlayer = player' })
         areaBoth player' npc' = (area { gameStatePlayer = player', gameStateNPCs = npc' })
-        areaColl a p = collisionItemCheck a p inputs
-        backgroundNew area' = updateBackground cfgs (background area')
+        areaColl a p = collisionActionCheck a p inputs
+        backgroundNew l@(Left _) _ = l
+        backgroundNew (Right a) p = Right $ (\b -> a { background = b}) $ updateBackground cfgs (background a) p
+        convertE (Left info) = Left info
+        convertE (Right a) = Right $ GameStateArea a True
 
 
-updatePlayer :: Background -> InputState -> Player -> Maybe Player
-updatePlayer back inputs player@(Player cfgs state) =
+updatePlayer :: Barriers -> Background -> InputState -> Player -> Maybe Player
+updatePlayer rtree back inputs player@(Player cfgs state) =
     case (inputStateDirection inputs, playerAction state) of
         (Nothing, PlayerStanding _ _) -> Nothing
         (Nothing, PlayerMoving (PlayerMove d _ _)) -> Just (player {playerState = state { playerAction = PlayerStanding d ts}})
-        (Just iDir, PlayerStanding _ _) -> Just (movePlayer back player iDir ts 0 (newPos iDir))
+        (Just iDir, PlayerStanding _ _) -> Just (movePlayer rtree player iDir ts 0 (newPos iDir))
         (Just iDir, PlayerMoving pm@(PlayerMove oldDir oldTs f))
-            | iDir == oldDir && (ts - oldTs) > rate -> Just (movePlayer back player iDir ts (mod (f + 1) 8) (newPos iDir))
+            | iDir == oldDir && (ts - oldTs) > rate -> Just (movePlayer rtree player iDir ts (mod (f + 1) 8) (newPos iDir))
             | iDir == oldDir -> Nothing
-            | otherwise -> Just (movePlayer back player iDir ts 0 (newPos iDir))
+            | otherwise -> Just (movePlayer rtree player iDir ts 0 (newPos iDir))
     where
         ts = inputTimestamp inputs
         newPos = newCharPosition back player
@@ -142,16 +152,16 @@ updatePosition m DLeft = (-m, 0)
 updatePosition m DRight = (m, 0)
 
 
-updateNPC :: Word32 -> Background -> Player -> NPCManager -> Maybe NPCManager
-updateNPC ts back player (NPCManager p) =
-    case followPlayer ts back player p of
+updateNPC :: Word32 -> Barriers -> Background -> Player -> NPCManager -> Maybe NPCManager
+updateNPC ts rtree back player (NPCManager p) =
+    case followPlayer ts rtree back player p of
         Nothing -> Nothing
         Just p' -> Just (NPCManager p')
 
 
 -- TODO: Add follow collision check (how not to get stuck)
-followPlayer :: Word32 -> Background -> Player -> Player -> Maybe Player
-followPlayer ts back player p@(Player cfgs state) =
+followPlayer :: Word32 -> Barriers -> Background -> Player -> Player -> Maybe Player
+followPlayer ts rtree back player p@(Player cfgs state) =
     case (targetM, playerAction state) of
         (Nothing, PlayerMoving pm@(PlayerMove oldDir oldTs _))
             | (ts - oldTs) > rate -> Just (p {playerState = state {playerAction = PlayerStanding oldDir ts}})
@@ -166,15 +176,15 @@ followPlayer ts back player p@(Player cfgs state) =
             | otherwise -> Nothing
     where
         rate = stepRate $ playerMoveCfgs cfgs
-        targetM = followTarget back player p
+        targetM = followTarget rtree back player p
         updateFollow pos dir f = -- movePlayer back p dir ts f pos
             let
                 movement = PlayerMoving (PlayerMove dir ts f)
             in p {playerState = state {playerPosition = pos, playerAction = movement}}
 
 
-followTarget :: Background -> Player -> Player -> Maybe (Direction, (Int, Int))
-followTarget back player follow
+followTarget :: Barriers -> Background -> Player -> Player -> Maybe (Direction, (Int, Int))
+followTarget rtree back player follow
     -- already in the target location but facing a different direction than the player so change facing direction
     | leftDiff' == 0 && upDiff' == 0 && dir /= nDir = Just (dir, (folX, folY))
     -- already in the target location so don't move
@@ -192,14 +202,14 @@ followTarget back player follow
         rightDiff = targetX' - folX
         upDiff = folY - targetY'
         downDiff = targetY' - folY
-        (_, leftMove) = playerMove back follow DLeft leftDiff
-        leftDiff' = folX - (fst leftMove)
-        (_, rightMove) = playerMove back follow DRight rightDiff
-        rightDiff' = (fst rightMove) - folX
-        (_, upMove) = playerMove back follow DUp upDiff
-        upDiff' = folY - (snd upMove)
-        (_, downMove) = playerMove back follow DDown downDiff
-        downDiff' = (snd downMove) - folY
+        (_, leftMove) = playerMove rtree follow DLeft leftDiff
+        leftDiff' = folX - fst leftMove
+        (_, rightMove) = playerMove rtree follow DRight rightDiff
+        rightDiff' = fst rightMove - folX
+        (_, upMove) = playerMove rtree follow DUp upDiff
+        upDiff' = folY - snd upMove
+        (_, downMove) = playerMove rtree follow DDown downDiff
+        downDiff' = snd downMove - folY
         (folX, folY) = playerPosition $ playerState follow
         (BB folXLeft folYUp folXRight folYDown) = getBoundBox dir $ playerHitBoxes $ playerCfgs follow
         dir = getDirection player
@@ -233,18 +243,23 @@ updateBackground cfgs back player = back { backXOffset = getOffset playerX windo
             | otherwise = playerPos - div window 2
 
 
-collisionItemCheck :: GameArea -> Player -> InputState -> GameArea
-collisionItemCheck gs player inputs =
+collisionActionCheck :: GameArea -> Player -> InputState -> Either (AreaLocation, Player) GameArea
+collisionActionCheck gs player inputs =
     case getCollisionBB hb' cm of
-        [] -> gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
-        collisions -> 
-            let fstColl@(_, itemId) = head collisions -- TODO: most overlapped one instead of first?
+        [] -> Right $ gs { gameStatePlayer = player, gameStateItemManager = items {itemHighlighted = Nothing} }
+        collisions ->
+            let (u, itemId) = head collisions -- TODO: most overlapped one instead of first?
                 itemState = itemMap items ! itemId
-            in itemOnCollision (itemInfo itemState) gs inputs fstColl
+            in onCollision gs inputs (u, itemId)
     where
         oldPlayer = gameStatePlayer gs
         oldHb = getPlayerPickupBox oldPlayer
         hb = getPlayerPickupBox player
         hb' = oldHb `union` hb
-        cm = collisionMap gs
         items = gameStateItemManager gs
+        cm = collisionMap items
+
+resetItems :: GameArea -> GameArea
+resetItems area
+    | isJust $ itemHighlighted $ gameStateItemManager area = undefined
+    | otherwise = area

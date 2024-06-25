@@ -14,6 +14,21 @@
         "sizeY": 300,
         "file": "assets/images/outside.png"
     },
+    "inside_house": {
+        "sizeX": 400,
+        "sizeY": 400,
+        "file": "assets/images/inside_house.png"
+    },
+    "house_closed": {
+        "sizeX": 200,
+        "sizeY": 100,
+        "file": "assets/images/house_outside.png"
+    },
+    "house_open": {
+        "sizeX": 200,
+        "sizeY": 100,
+        "file": "assets/images/house_outside_highlight.png"
+    },
     "bag": {
         "sizeX": 400,
         "sizeY": 300,

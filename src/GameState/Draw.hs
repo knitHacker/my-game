@@ -24,6 +24,7 @@ import GameState.Types
     ( Background(..)
     , ItemState(..)
     , Item(..)
+    , Items(..)
     , ItemManager(..)
     , Player(..)
     , PlayerState(..)
@@ -38,7 +39,9 @@ import GameState.Types
     , MenuAction(..)
     , Inventory(..)
     , GameState(..)
+    , Portal(..)
     )
+import GameState.Player
 import OutputHandles.Types
     ( Color(..)
     , Draw(..)
@@ -50,7 +53,9 @@ import OutputHandles.Types
 import OutputHandles.Draw ( mkRect )
 import InputState ( Direction(..) )
 
-import Debug.Trace ()
+import Debug.Trace
+import GHC.Real (fromIntegral)
+import GameState.Collision.BoundBox
 
 drawBackground :: Draws -> GameConfigs -> GameArea -> Draws
 drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boardHeight (Just mask)) draws
@@ -66,8 +71,8 @@ drawBackground draws cfgs gs = M.insert (0, 0, -1, 0) (Draw t 0 0 boardWidth boa
         mask = mkRect xStart yStart boardWidth boardHeight
 
 
-drawPlayer :: Draws -> GameArea -> Draws
-drawPlayer draws gs = M.insert (0, bottom, 2, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
+drawPlayer :: Draws -> GameArea -> (Draws, [(Int, Int, Int, Int)])
+drawPlayer draws gs = (M.insert (0, bottom, 2, xPos') (Draw t xPos' yPos' pSizeX pSizeY (Just charRect)) draws, db)
     where
         player = gameStatePlayer gs
         textureEntry = playerTexture $ playerCfgs player
@@ -77,10 +82,13 @@ drawPlayer draws gs = M.insert (0, bottom, 2, xPos) (Draw t xPos yPos pSizeX pSi
         xOff = backXOffset $ background gs
         yOff = backYOffset $ background gs
         (xBoard, yBoard) = playerPosition $ playerState player
-        xPos = fromIntegral (xBoard - xOff)
-        yPos = fromIntegral (yBoard - yOff)
+        xPos = xBoard - xOff
+        yPos = yBoard - yOff
+        xPos' = fromIntegral xPos
+        yPos' = fromIntegral yPos
         charRect = getCharacter player
         bottom = fromIntegral (yBoard - yOff) + pSizeY
+        db = [toRect $ getPlayerPickupBoxAdjust player xPos yPos]
 
 drawNPC :: Draws -> GameArea -> Draws
 drawNPC draws gs = M.insert (0, bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY (Just charRect)) draws
@@ -97,8 +105,6 @@ drawNPC draws gs = M.insert (0, bottom, 1, xPos) (Draw t xPos yPos pSizeX pSizeY
         yPos = fromIntegral (yBoard - yOff)
         charRect = getCharacter npcPlayer
         bottom = fromIntegral (yBoard - yOff) + pSizeY
-
-
 
 getCharacter :: Player -> SDL.Rectangle CInt
 getCharacter player = mkRect xPos yPos width height
@@ -120,8 +126,8 @@ getDirectionNum DDown = 1
 getDirectionNum DLeft = 2
 getDirectionNum DRight = 3
 
-drawItems :: Draws -> GameConfigs -> GameArea -> Draws
-drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWidth boardHeight) draws (M.assocs (itemMap im))
+drawItems :: (Draws, [(Int, Int, Int, Int)]) -> GameConfigs -> GameArea -> (Draws, [(Int, Int, Int, Int)])
+drawItems (draws, dbs) cfgs gs = foldl (drawFromItemMap (itemHighlighted im) xOff yOff boardWidth boardHeight) (draws, dbs) (M.assocs (itemMap im))
     where
         im = gameStateItemManager gs
         back = background gs
@@ -130,15 +136,24 @@ drawItems draws cfgs gs = foldl (drawItem (itemHighlighted im) xOff yOff boardWi
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
 
-drawItem :: Maybe Unique -> Int -> Int -> Int -> Int -> Draws -> (Unique, ItemState) -> Draws
-drawItem _ _ _ _ _ d (_, ItemState _ Nothing) = d
-drawItem hKey xStart yStart width height d (key, ItemState (Item _ tE tEh _ _ _) (Just (xPos, yPos)))
+drawFromItemMap :: Maybe Unique -> Int -> Int -> Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> (Unique, Items) -> (Draws, [(Int, Int, Int, Int)])
+drawFromItemMap hKey xStart yStart width height (d, dbs) (key, i) =
+    case i of
+        PortalItem p -> drawPortal isHighlighted xStart yStart (d, dbs) p
+        CollectItem (ItemState _ Nothing) -> (d, dbs)
+        CollectItem (ItemState iT (Just (xPos, yPos))) -> (drawItem isHighlighted xStart yStart width height d iT (xPos, yPos), dbs)
+
+    where
+        isHighlighted = case hKey of
+                            Nothing -> False
+                            Just k -> k == key
+
+drawItem :: Bool -> Int -> Int -> Int -> Int -> Draws -> Item -> (Int, Int) -> Draws
+drawItem hi xStart yStart width height d (Item _ tE tEh _ _) (xPos, yPos)
     | yPos + tH < yStart || xPos + tW < xStart || yPos >= yStart + height || xPos >= xStart + width = d
     | otherwise = M.insert (0, bottom, 5, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
-        tE' = case hKey of
-                Just hk -> if hk == key then tEh else tE
-                Nothing -> tE
+        tE' = if hi then tEh else tE
         t = texture tE'
         tW = textureWidth tE'
         tH = textureHeight tE'
@@ -150,16 +165,16 @@ drawItem hKey xStart yStart width height d (key, ItemState (Item _ tE tEh _ _ _)
 
 
 drawBarriers :: Draws -> GameConfigs -> GameArea -> Draws
-drawBarriers draws cfgs area = foldl (drawBarrier xOff yOff)
+drawBarriers draws cfgs area = M.foldlWithKey (drawBarrier xOff yOff)
                                      draws
-                                     (M.elems (backBarriers (background area)))
+                                     (backBarriers (background area))
     where
         back = background area
         xOff = backXOffset back
         yOff = backYOffset back
 
-drawBarrier :: Int -> Int -> Draws -> ((Int, Int), TextureEntry) -> Draws
-drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
+drawBarrier :: Int -> Int -> Draws -> (Int, Int) -> TextureEntry -> Draws
+drawBarrier xStart yStart d (xPos, yPos) tE = M.insert (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing) d
     where
         t = texture tE
         w = fromIntegral $ textureWidth tE
@@ -167,6 +182,19 @@ drawBarrier xStart yStart d ((xPos, yPos), tE) = M.insert (0, bottom, 0, xPos') 
         xPos' = fromIntegral (xPos - xStart)
         yPos' = fromIntegral (yPos - yStart)
         bottom = yPos' + h
+
+drawPortal :: Bool -> Int -> Int -> (Draws, [(Int, Int, Int, Int)]) -> Portal -> (Draws, [(Int, Int, Int, Int)])
+drawPortal hi xStart yStart (d, dbs) port = (M.insert (0, bottom, 0, fromIntegral xPos') (Draw t (fromIntegral xPos') (fromIntegral yPos') w h Nothing) d, rect : dbs)
+    where
+        tE = if hi then _portalOpenTexture port else _portalClosedTexture port
+        t = texture tE
+        w = fromIntegral $ textureWidth tE
+        h = fromIntegral $ textureHeight tE
+        (xPos, yPos) = _portalPos port
+        xPos' = xPos - xStart
+        yPos' = yPos - yStart
+        bottom = fromIntegral yPos' + h
+        rect = toRect $ translate xPos' yPos' $ _portalHB port
 
 updateWindow :: (MonadIO m, ConfigsRead m, GameStateRead m) => m (Maybe ToRender)
 updateWindow = do
@@ -178,25 +206,22 @@ updateWindow = do
         GameStateArea area True -> return $ Just $ updateAreaWindow cfgs area
         GameStateArea _ False -> return Nothing
         GameInventory inv -> return $ Just $ updateInventory cfgs inv
-        _ -> return $ Just $ ToRender M.empty []
-
+        _ -> return $ Just $ ToRender M.empty [] []
 
 updateAreaWindow :: GameConfigs -> GameArea -> ToRender
-updateAreaWindow cfgs area = ToRender draws'''' []
+updateAreaWindow cfgs area = ToRender draws4 [] (dbs ++ dbs')
     where
         draws = drawBackground mempty cfgs area
         draws' = drawBarriers draws cfgs area
-        draws'' = drawPlayer draws' area
-        draws''' = drawNPC draws'' area
-        draws'''' =  drawItems draws''' cfgs area
-
+        (draws2, dbs) = drawPlayer draws' area
+        draws3 = drawNPC draws2 area
+        (draws4, dbs') =  drawItems (draws3, dbs) cfgs area
 
 updateGameMenu :: Menu -> ToRender
-updateGameMenu (Menu words opts cur) = ToRender M.empty words <> updateMenuOptions cur opts
-
+updateGameMenu (Menu words opts cur) = ToRender M.empty words [] <> updateMenuOptions cur opts
 
 updateMenuOptions :: MenuCursor -> [MenuAction] -> ToRender
-updateMenuOptions (MenuCursor pos tE) ma = ToRender draws $ updateMenuOptions' ma 180
+updateMenuOptions (MenuCursor pos tE) ma = ToRender draws (updateMenuOptions' ma 180) []
     where
         draws = M.singleton (0, bottom, 0, xPos') (Draw t xPos' yPos' w h Nothing)
         t = texture tE
@@ -224,8 +249,10 @@ updateMenuOptions' (h:tl) y = dis : updateMenuOptions' tl newY
                         GameStartMenu -> ("Return to Main Menu", 100, 80)
 
 updateInventory :: GameConfigs -> Inventory -> ToRender
-updateInventory cfgs inv = current <> ToRender draws' texts
+updateInventory cfgs inv = current <> ToRender draws' texts []
     where
+        spaceBtw :: Int
+        spaceBtw = 60
         bagE = bagTexture inv
         boardWidth = boardSizeX cfgs
         boardHeight = boardSizeY cfgs
@@ -233,14 +260,18 @@ updateInventory cfgs inv = current <> ToRender draws' texts
         (draws', texts) = if M.size itemMap > 0
                     then (itemDraw, numText)
                     else (draws, [])
-        itemDraw = M.insert (2,1,1,1) (Draw (texture $ itemTexture $ item) (fromIntegral itemX) (fromIntegral itemY) 50 50 Nothing) draws
-        numText = [TextDisplay countStr (fromIntegral (itemX + 25)) (fromIntegral (itemY + 60)) (fromIntegral (10 * (T.length countStr))) 20 Red
-                  , TextDisplay itemStr (fromIntegral (itemX - 15)) (fromIntegral (itemY - 25)) (fromIntegral (10 * (T.length itemStr))) 20 Red]
-        countStr = T.pack $ show count
-        itemStr = itemName item
+
+        itemDraw = foldl (\ds (i, item) -> M.insert (2,1,1,fromIntegral i) (Draw (texture $ itemTexture item) (fromIntegral (itemX + spaceBtw * i)) (fromIntegral itemY + 25) 25 25 Nothing) ds) draws $ zip [0..] items
+        numText = countText ++ nameText
+        countText = (\(i, str) ->
+                            TextDisplay str (fromIntegral (itemX + (spaceBtw * i) + 20)) (fromIntegral (itemY + 60)) (fromIntegral (5 * T.length str)) 10 Red) <$> zip [0..] countStrs
+        nameText = (\(i, str) ->
+                            TextDisplay str (fromIntegral (itemX + spaceBtw * i)) (fromIntegral (itemY - 5)) (fromIntegral (5 * T.length str)) 10 Red) <$> zip [0..] itemStrs
+        countStrs = fmap (T.pack . show) counts
+        itemStrs = map itemName items
         area = areaInfo inv
         current = updateAreaWindow cfgs area
         itemMap = playerItems $ playerState $ gameStatePlayer area
-        (item, count) = head $ M.assocs itemMap
-        itemX = boardWidth `div` 2 - 25
+        (items, counts) = unzip $ M.assocs itemMap
+        itemX = boardWidth `div` 2 - 50
         itemY = boardHeight `div` 2 - 25

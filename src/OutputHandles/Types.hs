@@ -9,6 +9,7 @@ module OutputHandles.Types
     , Draws
     , ToRender(..)
     , TextDisplay(..)
+    , TextureMap
     ) where
 
 import Foreign.C.Types ( CInt )
@@ -30,15 +31,16 @@ type Draws = M.Map Position Draw
 data ToRender = ToRender
     { draws :: !Draws
     , drawWords :: ![TextDisplay]
+    , drawDebugs :: ![(Int, Int, Int, Int)]
     }
 
 instance Monoid ToRender where
     mempty :: ToRender
-    mempty = ToRender M.empty []
+    mempty = ToRender M.empty [] []
 
 instance Semigroup ToRender where
    (<>) :: ToRender -> ToRender -> ToRender
-   (<>) (ToRender m1 l1) (ToRender m2 l2) = ToRender (m1 <> m2) (l1 <> l2)
+   (<>) (ToRender m1 l1 d1) (ToRender m2 l2 d2) = ToRender (m1 <> m2) (l1 <> l2) (d1 <> d2)
 
 data Color = White | Black | Red | Blue | Green | Yellow
 
@@ -68,11 +70,12 @@ data TextureEntry = TextureEntry
     , texture :: SDL.Texture
     }
 
+type TextureMap = M.Map T.Text TextureEntry
 
 data OutputHandles = OutputHandles
     { window :: SDL.Window
     , renderer :: SDL.Renderer
-    , textures :: M.Map T.Text TextureEntry
+    , textures :: TextureMap
     , font :: Font.Font
     , ratioX :: Double
     , ratioY :: Double

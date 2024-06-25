@@ -1,6 +1,7 @@
 {
     "debug": true,
     "debugOutlineTexture": false,
+    "debugHitboxes": false,
     "windowSizeX": 1200,
     "windowSizeY": 1000,
     "boardSizeX": 250,
@@ -55,12 +56,44 @@
         "outside": {
             "barriers": {
                 "pond": {
-                    "x": 150,
-                    "y": 100
+                    "x": 100,
+                    "y": 120
                 },
                 "stump": {
                     "x": 300,
                     "y": 200
+                }
+            },
+            "portals": {
+                "house": {
+                    "portalPosition": {
+                        "x": 180,
+                        "y": 0
+                    },
+                    "portalHitBox": {
+                        "x1": 80,
+                        "y1": 80,
+                        "x2": 110,
+                        "y2": 100
+                    }
+                }
+            }
+        },
+        "inside_house": {
+            "barriers": {
+            },
+            "portals": {
+                "outside": {
+                    "portalPosition": {
+                        "x": 180,
+                        "y": 0
+                    },
+                    "portalHitBox": {
+                        "x1": 180,
+                        "y1": 0,
+                        "x2": 200,
+                        "y2": 100
+                    }
                 }
             }
         }
@@ -80,6 +113,14 @@
                 "y1": 12,
                 "x2": 20,
                 "y2": 20
+            }
+        },
+        "house": {
+            "mainHitBox": {
+                "x1": 0,
+                "y1": 0,
+                "x2": 200,
+                "y2": 100
             }
         }
     },

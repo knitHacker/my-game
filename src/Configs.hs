@@ -14,6 +14,7 @@ module Configs
     , AreaCfg(..)
     , PositionCfg(..)
     , BarrierCfg(..)
+    , PortalCfg(..)
     ) where
 
 import Control.Monad ()
@@ -96,10 +97,19 @@ instance ToJSON PositionCfg
 
 data AreaCfg = AreaCfg
     { barriers :: M.Map T.Text PositionCfg
+    , portals :: M.Map T.Text PortalCfg
     } deriving (Generic, Show, Eq, Ord)
 
 instance FromJSON AreaCfg
 instance ToJSON AreaCfg
+
+data PortalCfg = PortalCfg
+    { portalPosition :: PositionCfg
+    , portalHitBox :: BoundBox
+    } deriving (Generic, Show, Eq, Ord)
+
+instance FromJSON PortalCfg
+instance ToJSON PortalCfg
 
 data BarrierCfg = BarrierCfg
     { mainHitBox :: BoundBox
@@ -112,6 +122,7 @@ instance ToJSON BarrierCfg
 data GameConfigs = GameConfigs
     { debug :: Bool
     , debugOutlineTexture :: Bool
+    , debugHitboxes :: Bool
     , boardSizeX :: Int
     , boardSizeY :: Int
     , windowSizeX :: Int

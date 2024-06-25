@@ -8,19 +8,23 @@ module GameState
 import Control.Monad ()
 import Configs ( ConfigsRead(readConfigs), GameConfigs )
 import InputState
-    ( enterJustPressed,
-      Direction(DDown, DUp),
-      InputRead(..),
-      InputState(inputRepeat, inputStateDirection) )
+    ( enterJustPressed
+    , Direction(DDown, DUp)
+    ,InputRead(..)
+    , InputState(inputRepeat, inputStateDirection)
+    )
 import GameState.Types
-    ( GameStateRead(..),
-      GameArea,
-      MenuCursor(MenuCursor, cursorPos),
-      Menu(Menu, cursor, options),
-      MenuAction(GameContinue, GameStart, GameExit, GameStartMenu),
-      GameState(..) )
+    ( GameStateRead(..)
+    , GameArea
+    , MenuCursor(MenuCursor, cursorPos)
+    , Menu(Menu, cursor, options)
+    , MenuAction(GameContinue, GameStart, GameExit, GameStartMenu)
+    , GameState(..)
+    , AreaLocation(..)
+    )
 import GameState.Areas ( updateArea )
 import GameState.Areas.Outside ( initOutsideArea )
+import GameState.Areas.Inside ( initInsideArea )
 import GameState.Menu.MainMenu ( initMainMenu )
 import GameState.Inventory ( updateGameInventory )
 import OutputHandles.Types ( OutputHandles, OutputRead(..) )
@@ -34,10 +38,10 @@ import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class ( MonadIO(..) )
+import GameState.Player (initPlayer)
 
 initGameState :: GameConfigs -> OutputHandles -> IO GameState
 initGameState cfgs outs = do
---    area <- initOutsideArea cfgs outs
     return $ GameMenu (initMainMenu outs) True
 
 randomPosition :: (MonadIO m) => Int -> Int -> Int -> Int ->  m (Int, Int)
@@ -58,7 +62,7 @@ updateGameState = do
     outs <- getOutputs
     case gs of
         GameMenu m _ -> liftIO $ updateGameStateInMenu m cfgs inputs outs
-        GameStateArea area _ -> return $ updateGameStateInArea outs cfgs inputs area
+        GameStateArea area _ -> liftIO $ updateGameStateInArea outs cfgs inputs area
         GameInventory inv -> return $ updateGameInventory inputs inv
         _ -> return gs
 
@@ -75,9 +79,9 @@ decrementMenuCursor m@(Menu _ _ c@(MenuCursor p _)) = m { cursor = c { cursorPos
 updateGameStateInMenu :: Menu -> GameConfigs -> InputState -> OutputHandles -> IO GameState
 updateGameStateInMenu m cfgs inputs outs =
     if enterJustPressed inputs
-        then case (options m !! curPos) of
+        then case options m !! curPos of
             GameStart -> do
-                area <- initOutsideArea cfgs outs
+                area <- initOutsideArea cfgs outs player
                 return $ GameStateArea area True
             GameExit -> return GameExiting
             GameStartMenu -> return $ GameMenu (initMainMenu outs) True
@@ -88,7 +92,11 @@ updateGameStateInMenu m cfgs inputs outs =
             _ -> return (GameMenu m False)
     where
         curPos = cursorPos $ cursor m
+        player = initPlayer cfgs outs 0 0
 
 
-updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> GameState
-updateGameStateInArea = updateArea
+updateGameStateInArea :: OutputHandles -> GameConfigs -> InputState -> GameArea -> IO GameState
+updateGameStateInArea outs cfgs inputs area =
+    case updateArea outs cfgs inputs area of
+        Right gs -> return gs
+        Left (InsideArea, p) -> initInsideArea cfgs outs p >>= \a -> return $ GameStateArea a True
