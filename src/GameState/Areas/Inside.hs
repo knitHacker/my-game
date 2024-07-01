@@ -12,7 +12,7 @@ import Configs
     , ItemCfg(..)
     , PositionCfg(..)
     )
-import InputState ( Direction(DDown) )
+import InputState ( Direction(DUp) )
 import GameState.Types
     ( Background(..)
     , ItemManager(..)
@@ -37,14 +37,10 @@ import qualified SDL
 
 import Utils ( randomValue )
 
-import qualified SDL.Image
 import qualified Data.Map.Strict as M
 import Data.Map.Strict ((!))
 import Control.Monad.IO.Class ( MonadIO )
-import Data.Unique ( Unique, hashUnique, newUnique )
 
-import GameState.Collision.BoundBox ( translate )
-import GameState.Collision.RTree ( getCollision, insert, RTree )
 import GameState.Player
     ( mainCharName
     , npcName
@@ -53,20 +49,24 @@ import GameState.Player
     , updatePlayerPosition
     )
 import GameState.Barrier
-
-initBackground :: GameConfigs -> OutputHandles -> IO (Background, Barriers)
-initBackground gCfgs outs = do
-    let (barrs, cm) = foldl (\(b, c) (name, aCfg) -> insertBarriers name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
-    return (Background backT 0 0 barrs, cm)
-    where
-        name = "inside_house"
-        areaCfg = M.toList $ barriers (areas gCfgs ! name)
-        backT = textures outs ! name
-        barrCfgs = barrier_definitions gCfgs
+import GameState.Background
+import GameState.Types
 
 initInsideArea :: GameConfigs -> OutputHandles -> Player -> IO GameArea
 initInsideArea cfgs outs player = do
-    (back, bcm) <- initBackground cfgs outs
-    let im = ItemManager mempty Nothing mempty
-        player' = updatePlayerPosition player 0 0 DDown
-    return $ GameArea back player' (initNPC cfgs outs 20 10) im bcm
+    return $ GameArea back' player' (initNPC cfgs outs (pX + 20) (pY + 10)) im bcm
+    where
+        name = "inside_house"
+        areaCfg = M.toList $ barriers (areas cfgs ! name)
+        backT = textures outs ! name
+        width = fromIntegral $ textureWidth $ backArea back
+        height = fromIntegral $ textureHeight $ backArea back
+        barrCfgs = barrier_definitions cfgs
+        (barrs, bcm) = foldl (\(b, c) (name, aCfg) -> insertBarriers name aCfg barrCfgs (textures outs) b c) (mempty, mempty) areaCfg
+        back = Background backT 0 0 barrs
+        playerHeight = textureHeight $ playerTexture $ playerCfgs player
+        pX = width `div` 2
+        pY = height - playerHeight
+        player' = updatePlayerPosition player pX pY DUp
+        back' = updateBackground cfgs back player'
+        im = ItemManager mempty Nothing mempty -- so far no items in this area

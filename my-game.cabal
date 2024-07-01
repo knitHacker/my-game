@@ -74,6 +74,7 @@ library
       GameState.Areas
       GameState.Areas.Inside
       GameState.Areas.Outside
+      GameState.Background
       GameState.Barrier
       GameState.Collision
       GameState.Collision.BoundBox

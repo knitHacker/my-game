@@ -59,6 +59,7 @@ import GameState.Menu.PauseMenu ( initPauseMenu )
 import GameState.Inventory ( initInventory )
 import GameState.Item
 import GameState.Areas.Inside
+import GameState.Background
 
 import Debug.Trace
 
@@ -225,22 +226,6 @@ followTarget rtree back player follow
                                 DRight -> (pX - 15 - folXRight, pY + yDown - folYDown)
         (targetX', targetY') = (min (xMax - folXRight) (max (-folXLeft) targetX)
                                , min (yMax - folYDown) (max 0 targetY))
-
-
-updateBackground :: GameConfigs -> Background -> Player -> Background
-updateBackground cfgs back player = back { backXOffset = getOffset playerX windowX xMax
-                                         , backYOffset = getOffset playerY windowY yMax
-                                         }
-    where
-        windowX = boardSizeX cfgs
-        windowY = boardSizeY cfgs
-        xMax = textureWidth $ backArea back
-        yMax = textureHeight $ backArea back
-        (playerX, playerY) = playerPosition $ playerState player
-        getOffset playerPos window areaMax
-            | playerPos < div window 2 = 0
-            | playerPos > areaMax - div window 2 = areaMax - window
-            | otherwise = playerPos - div window 2
 
 
 collisionActionCheck :: GameArea -> Player -> InputState -> Either (AreaLocation, Player) GameArea
